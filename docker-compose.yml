@@ -12,5 +12,3 @@ services:
     # 环境变量配置
     environment:
       - NODE_ENV=production
-    volumes:
-      - ./:/app
