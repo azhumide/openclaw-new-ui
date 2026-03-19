@@ -1,7 +1,5 @@
 # 🦀 OpenClaw New UI
 
-![OpenClaw Banner](https://i.postimg.cc/nLrDYrHW/icon.png)
-
 **OpenClaw New UI** 是一款专为 OpenClaw 网关设计的现代化、高性能、且极富设计感的 Web 控制台。基于 Next.js 打造，旨在为用户提供最流畅的 AI 交互体验与最直观的网关管理能力。
 
 ---
