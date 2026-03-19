@@ -1,0 +1,53 @@
+# OpenClaw New UI - Docker Compose 详细配置示例文件
+# 提示: 如果您想使用此配置，请将其重命名为 docker-compose.yml 并根据需要修改设置。
+
+services:
+  openclaw-new-ui:
+    # 构建配置
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    
+    # 容器的基础信息
+    container_name: openclaw-new-ui
+    image: openclaw-new-ui:latest
+    
+    # 自动重连策略: 容器意外退出或宿主机重启时自动拉起
+    restart: always
+    
+    # 端口映射: [宿主机端口]:[容器内部端口]
+    # 如果 3000 端口冲突，可以将左侧修改为其他端口 (例如 "8080:3000")
+    ports:
+      - "3000:3000"
+    
+    # 环境变量配置
+    environment:
+      # 运行环境设定 (production 或 development)
+      - NODE_ENV=production
+      # 如果需要禁用 Next.js 的匿名遥测数据收发
+      - NEXT_TELEMETRY_DISABLED=1
+      # 如果需要指定应用监听的内部端口 (默认为 3000)
+      - PORT=3000
+    
+    # 挂载卷设置 (开发模式建议配置)
+    # 注意: 仅在您需要“宿主机修改代码，容器即时同步并生效”时启用。
+    # volumes:
+    #   - ./:/app                      # 将本机的项目源码挂载到容器内部
+    #   - /app/node_modules            # 隔离容器内的依赖环境，避免宿主机不同平台的依赖干扰
+    #   - /app/.next                   # 隔离构建缓存，避免权限或环境导致的编译错误
+    
+    # 健康检查 (可忽略)
+    # healthcheck:
+    #   test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+    #   interval: 1m
+    #   timeout: 3s
+    #   retries: 3
+    #   start_period: 30s
+
+    # 网络设置建议 (如果需要与网关容器互联可开启)
+    # networks:
+    #   - openclaw-network
+
+# networks:
+#   openclaw-network:
+#     external: true

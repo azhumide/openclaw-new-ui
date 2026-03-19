@@ -1,0 +1,16 @@
+services:
+  openclaw-new-ui:
+    # 使用当前目录下的 Dockerfile 进行构建
+    build: .
+    # 容器名称
+    container_name: openclaw-new-ui
+    # 容器意外退出或服务器重启时自动重启
+    restart: always
+    # 端口映射: 外部 3000 -> 容器内部 3000
+    ports:
+      - "3000:3000"
+    # 环境变量配置
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./:/app
