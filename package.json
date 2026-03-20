@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "env-cmd next dev -p %PORT%",
+    "dev": "env-cmd next dev --turbo=false",
     "build": "next build",
-    "start": "env-cmd next start -p %PORT%",
+    "start": "env-cmd next start",
     "lint": "eslint"
   },
   "dependencies": {
