@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Globe, Shield, Activity, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { APP_VERSION } from "@/config/version";
 
 export function AccountSettingsDialog({
   open,
@@ -83,7 +84,7 @@ export function AccountSettingsDialog({
                     </div>
                     <div className="space-y-2.5">
                       <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">连接协议 (Protocol)</Label>
-                      <Input defaultValue="v2026.3.11" className="font-mono text-sm bg-muted/50" disabled />
+                      <Input defaultValue={`v${APP_VERSION}`} className="font-mono text-sm bg-muted/50" disabled />
                       <p className="text-[10px] text-muted-foreground leading-snug">此参数为当前客户端硬编码强制绑定的版本。后续可通过此覆盖旧版本代理节点协议。</p>
                     </div>
                   </div>

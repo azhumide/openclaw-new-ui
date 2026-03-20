@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserProfileDialog } from "@/components/user-profile-dialog";
 import { AccountSettingsDialog } from "@/components/account-settings-dialog";
+import { APP_VERSION } from "@/config/version";
 import { useProfile } from "@/hooks/use-profile";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -211,7 +212,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
              </Button>
              <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 bg-muted/50 rounded-full text-[9px] sm:text-[11px] font-medium border border-border/50">
                <span className={cn("size-1.5 sm:size-2 rounded-full shrink-0", connected ? "bg-green-500" : "bg-red-500 animate-pulse")} />
-               <span className="hidden sm:inline">版本 {snapshot?.server?.version || "2026.3.11"}</span>
+               <span className="hidden sm:inline">版本 {snapshot?.server?.version || APP_VERSION}</span>
              </div>
              <div className={cn(
                "flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 rounded-full text-[9px] sm:text-[11px] font-medium border shrink-0",

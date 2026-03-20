@@ -1,4 +1,5 @@
 import { generateUUID } from "./uuid";
+import { APP_VERSION } from "@/config/version";
 
 export type GatewayEventFrame = {
   type: "event";
@@ -128,7 +129,7 @@ export class GatewayClient {
       maxProtocol: 5,
       client: {
         id: "openclaw-control-ui", // CRITICAL: Must be this to pass schema
-        version: "v2026.3.11",
+        version: `v${APP_VERSION}`,
         platform: "web",
         mode: "webchat",
       },

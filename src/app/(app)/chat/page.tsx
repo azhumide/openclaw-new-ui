@@ -112,6 +112,7 @@ export default function ChatPage() {
   
   const [activeSession, setActiveSession] = useState("main");
   const [showDetails, setShowDetails] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Load settings from local storage on mount
   useEffect(() => {
@@ -269,13 +270,21 @@ export default function ChatPage() {
                 setSessions(prev => prev.map(s => s.key === sessionKey ? { ...s, usage } : s));
             }
         } else if (state === "final" || state === "after-final" || state === "aborted") {
+            // Optimistic update: push final message to list immediately to prevent "flash" gap
+            if (message && message.content) {
+                setMessages(prev => {
+                    // Check if message already exists to avoid duplication
+                    if (prev.find(m => m.id === message.id)) return prev;
+                    return [...prev, message];
+                });
+            }
             setStreamingMessage(null);
             setIsTyping(false);
-            // Debounce history/sessions fetch
+            // Debounce history/sessions fetch for data consistency (background)
             setTimeout(() => {
               fetchHistory(activeSession);
               fetchSessions();
-            }, 500);
+            }, 800);
             if (evt.payload.usage) {
                 const usage = evt.payload.usage;
                 setSessionUsage(usage);
@@ -296,10 +305,13 @@ export default function ChatPage() {
     if (scrollRef.current) {
         scrollRef.current.scrollTo({
             top: scrollRef.current.scrollHeight,
-            behavior: isTyping || streamingMessage ? "auto" : "smooth"
+            behavior: "auto"
         });
+        if (isInitialLoad && messages.length > 0) {
+            setIsInitialLoad(false);
+        }
     }
-  }, [messages, streamingMessage, isTyping]);
+  }, [messages, streamingMessage, isTyping, isInitialLoad]);
 
   const handleOpenSidebar = useCallback((content: string) => {
     setSidebarContent(content);
@@ -349,6 +361,7 @@ export default function ChatPage() {
   }, [inputText, client, connected, activeSession, toast]);
 
   const handleSwitchSession = (key: string) => {
+    setIsInitialLoad(true);
     setActiveSession(key);
     setStreamingMessage("");
     setInputText("");
@@ -547,8 +560,14 @@ export default function ChatPage() {
         {renderCommandsModal()}
         {renderUsageModal()}
         
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 sm:py-8 custom-scrollbar scroll-smooth">
-            <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12 pb-32 sm:pb-40">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 sm:py-8 custom-scrollbar">
+            <motion.div 
+                key={activeSession}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="max-w-4xl mx-auto space-y-8 sm:space-y-12 pb-32 sm:pb-40"
+            >
                 {messages.length === 0 && !isTyping && !streamingMessage && (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground pt-40 opacity-20 select-none">
                         <Bot className="size-32 mb-6 stroke-[0.5]" />
@@ -558,48 +577,36 @@ export default function ChatPage() {
                         </div>
                     </div>
                 )}
-                {messages.map((m, i) => (
-                  <MessageItem 
-                    key={`${m.id || i}`} 
-                    {...m}
-                    isStreaming={false}
-                    onOpenSidebar={handleOpenSidebar}
-                    message={m}
-                    agents={agents}
-                    showDetails={showDetails}
-                  />
-                ))}
-                {isTyping && streamingMessage === null && (
-                  <div className="flex items-start gap-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                    <div className="size-11 rounded-[1.2rem] bg-primary/5 border border-primary/10 flex items-center justify-center shrink-0">
-                      <div className="relative">
-                        <Bot className="size-6 text-primary animate-pulse" />
-                        <div className="absolute -inset-1 bg-primary/20 blur-sm rounded-full animate-ping" />
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex gap-1.5 p-4 rounded-[1.5rem] bg-muted/10 border border-border/40 w-fit">
-                        <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className="size-1.5 rounded-full bg-primary/30" />
-                        <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="size-1.5 rounded-full bg-primary/30" />
-                        <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="size-1.5 rounded-full bg-primary/30" />
-                      </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-primary/40 pl-2 animate-pulse">OpenClaw is thinking...</p>
-                    </div>
-                  </div>
-                )}
-                {streamingMessage && (
-                  <MessageItem 
-                    role="assistant" 
-                    content={streamingMessage.content}
-                    message={streamingMessage} 
-                    isStreaming={true}
-                    onOpenSidebar={handleOpenSidebar}
-                    agents={agents}
-                    showDetails={showDetails}
-                  />
-                )}
+                {useMemo(() => {
+                  const allVisible = [...messages];
+                  
+                  // Phase 1: Thinking (Virtual message)
+                  if (isTyping && !streamingMessage) {
+                    allVisible.push({ id: 'current-ai-response', role: 'assistant', isThinking: true });
+                  }
+                  // Phase 2: Streaming (Only if not already finalized in Phase 3)
+                  else if (streamingMessage) {
+                    const stableId = streamingMessage.id || 'current-ai-response';
+                    if (!messages.find(m => m.id === stableId)) {
+                        allVisible.push({ ...streamingMessage, id: stableId, isStreaming: true });
+                    }
+                  }
+
+                  return allVisible.map((m, i) => (
+                    <MessageItem 
+                      key={`msg-${i}`} 
+                      {...m}
+                      isStreaming={m.isStreaming || false}
+                      isThinking={m.isThinking || false}
+                      onOpenSidebar={handleOpenSidebar}
+                      message={m}
+                      agents={agents}
+                      showDetails={showDetails}
+                    />
+                  ));
+                }, [messages, streamingMessage, isTyping, agents, showDetails, handleOpenSidebar])}
                 <div ref={bottomRef} className="h-4" />
-            </div>
+            </motion.div>
         </div>
 
         <motion.div 
@@ -844,43 +851,44 @@ export default function ChatPage() {
 
         <AnimatePresence>
           {sidebarOpen && (
-          <motion.div 
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="w-[500px] border-l bg-background/60 backdrop-blur-3xl flex flex-col z-30 shadow-2xl"
-        >
-            <div className="p-8 border-b flex items-center justify-between bg-muted/20">
-                <div className="flex items-center gap-5">
-                    <div className="size-12 bg-primary/10 rounded-[1.2rem] flex items-center justify-center border border-primary/20">
-                        <Terminal className="size-6 text-primary" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-black uppercase tracking-widest leading-tight">执行详情</h3>
-                        <p className="text-[10px] text-muted-foreground font-black opacity-40 mt-1 uppercase tracking-tighter">报文分析控制台</p>
-                    </div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)} className="rounded-xl hover:bg-destructive/10 hover:text-destructive"><XCircle className="size-7 stroke-[1.5]" /></Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                        {sidebarContent || ""}
-                    </ReactMarkdown>
-                </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  </div>
-);
+            <motion.div 
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="w-[500px] border-l bg-background/60 backdrop-blur-3xl flex flex-col z-30 shadow-2xl"
+            >
+              <div className="p-8 border-b flex items-center justify-between bg-muted/20">
+                  <div className="flex items-center gap-5">
+                      <div className="size-12 bg-primary/10 rounded-[1.2rem] flex items-center justify-center border border-primary/20">
+                          <Terminal className="size-6 text-primary" />
+                      </div>
+                      <div>
+                          <h3 className="text-lg font-black uppercase tracking-widest leading-tight">执行详情</h3>
+                          <p className="text-[10px] text-muted-foreground font-black opacity-40 mt-1 uppercase tracking-tighter">报文分析控制台</p>
+                      </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)} className="rounded-xl hover:bg-destructive/10 hover:text-destructive"><XCircle className="size-7 stroke-[1.5]" /></Button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          {sidebarContent || ""}
+                      </ReactMarkdown>
+                  </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
 }
 
-const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, message, agents, showDetails }: any) => {
+const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, message, agents, showDetails, isThinking: isThinkingProp }: any) => {
   const isUser = role === "user";
   const { profile } = useProfile();
+  const isThinking = isThinkingProp || message?.isThinking || false;
 
   const agentName = useMemo(() => {
     if (!message?.agentId) return null;
@@ -889,6 +897,7 @@ const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, m
   }, [agents, message?.agentId]);
   
   const parts = useMemo(() => {
+    if (isThinking) return [];
     let initialParts: any[] = [];
     if (Array.isArray(content)) initialParts = content;
     else if (typeof content === 'string' && content.trim()) initialParts = [{ type: 'text', text: content }];
@@ -921,7 +930,7 @@ const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, m
     });
 
     return finalParts;
-  }, [content, message]);
+  }, [content, message, isThinking]);
 
   const renderPart = (part: any, index: number) => {
     if (typeof part === "string") return <ReactMarkdown key={index} remarkPlugins={[remarkGfm]} components={markdownComponents}>{part}</ReactMarkdown>;
@@ -931,9 +940,9 @@ const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, m
     // Robust type detection
     const isToolCall = ["tool_call", "toolcall", "tool_use", "tooluse", "tool-call"].includes(type) || (part.name && (part.arguments || part.args));
     const isToolResult = ["tool_result", "toolresult", "tool-result"].includes(type) || (part.toolCallId || part.tool_call_id);
-    const isThinking = ["thinking", "thought", "reasoning"].includes(type) || part.thinking || part.thought;
+    const isThinkingPart = ["thinking", "thought", "reasoning"].includes(type) || part.thinking || part.thought;
 
-    if (isThinking) {
+    if (isThinkingPart) {
         if (!showDetails) return null;
         const thinkingText = part.text || part.thinking || part.thought || "";
         if (!thinkingText || !thinkingText.trim()) return null;
@@ -963,7 +972,7 @@ const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, m
         // Compact mode for tools
         if (!showDetails) {
             return (
-                <div key={index} className="my-1.5 flex items-center gap-3 px-3 py-2 rounded-2xl bg-muted/20 border border-border/20 shadow-sm w-fit max-w-full group hover:border-orange-500/20 transition-all duration-300">
+                <div key={index} className="my-1.5 flex items-center gap-3 px-3 py-2 rounded-2xl bg-muted/20 border border-border/40 shadow-sm w-fit max-w-full group hover:border-orange-500/20 transition-all duration-300">
                     <div className="size-6 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20 shrink-0">
                         <Terminal className="size-3 text-orange-600" />
                     </div>
@@ -1117,12 +1126,22 @@ const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, m
   const timestamp = rawTs ? new Date(rawTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
   const fromId = message?.from;
 
-  if (parts.length === 0 && !isStreaming) return null;
+  if (parts.length === 0 && !isStreaming && !isThinking) return null;
 
   return (
-    <div className={cn("flex gap-2 sm:gap-3 animate-in fade-in slide-in-from-bottom-2 duration-400 ease-out mb-4 sm:mb-6", isUser ? "flex-row-reverse" : "max-w-4xl")}>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className={cn("flex gap-2 sm:gap-3 mb-4 sm:mb-6", !showDetails && "duration-0", isUser ? "flex-row-reverse" : "max-w-4xl")}
+    >
       <div className={cn("size-7 sm:size-9 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 border overflow-hidden shadow-sm transition-transform hover:scale-105 mt-1 sm:mt-0", isUser ? "bg-indigo-50 border-indigo-100 text-indigo-600" : "bg-background border-border")}>
-        {isUser ? (profile.avatar ? <img src={profile.avatar} className="w-full h-full object-cover" /> : <User className="size-4 sm:size-5" />) : <Bot className="size-4 sm:size-5 text-primary" />}
+        {isUser ? (profile.avatar ? <img src={profile.avatar} className="w-full h-full object-cover" /> : <User className="size-4 sm:size-5" />) : (
+            <div className="relative">
+                <Bot className={cn("size-4 sm:size-5 text-primary", isThinking && "animate-pulse")} />
+                {isThinking && <div className="absolute -inset-1 bg-primary/20 blur-sm rounded-full animate-ping" />}
+            </div>
+        )}
       </div>
       <div className={cn("flex-1 min-w-0 flex flex-col", isUser ? "items-end" : "items-start")}>
         <div className={cn("mb-1 sm:mb-2 px-1 sm:px-2 flex items-center gap-1 sm:gap-2 text-[9px] sm:text-[10px] text-muted-foreground/40 font-bold uppercase", isUser ? "flex-row-reverse" : "flex-row")}>
@@ -1130,38 +1149,44 @@ const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, m
             {fromId && <span className="opacity-50">({fromId})</span>}
             {timestamp && <span className="opacity-50 font-medium">{timestamp}</span>}
         </div>
-        <div className={cn(
-            "transition-all w-fit max-w-full", 
-            isUser ? "px-3.5 sm:px-6 py-2 sm:py-3.5 rounded-[1.2rem] sm:rounded-[1.8rem] shadow-sm border bg-indigo-50/30 border-indigo-100/40 rounded-tr-none text-indigo-950 font-medium" : 
-            ((!showDetails && parts.every(p => {
-                const type = (p.type || "").toLowerCase();
-                const text = (p.text || (typeof p === 'string' ? p : "")).trim();
-                // Ignore truly empty parts
-                if (!text && !p.name && !p.arguments && !p.args && !p.thinking && !p.thought) return true;
-                
-                const isToolCall = ["tool_call", "toolcall", "tool_use", "tooluse", "tool-call"].includes(type) || (p.name && (p.arguments || p.args));
-                const isToolResult = ["tool_result", "toolresult", "tool-result"].includes(type) || (p.toolCallId || p.tool_call_id);
-                const isThinking = ["thinking", "thought", "reasoning"].includes(type) || p.thinking || p.thought;
-                const isTechNoise = (["text", ""].includes(type) && (text.startsWith("{") || text.includes("<EXTERNAL_UNTRUSTED_CONTENT")));
-                return isToolCall || isToolResult || isThinking || isTechNoise || !text;
-            })) ? "bg-transparent border-none shadow-none px-0 py-0" : "px-3.5 sm:px-6 py-2 sm:py-3.5 rounded-[1.2rem] sm:rounded-[1.8rem] shadow-sm border bg-background border-border/50 rounded-tl-none")
-        )}>
-            <div className={cn(
-                "prose prose-sm dark:prose-invert max-w-none w-full break-words leading-tight sm:leading-relaxed text-[11px] sm:text-[14px] prose-p:my-1 sm:prose-p:my-2 prose-headings:text-base prose-headings:mt-3 prose-headings:mb-1 sm:prose-headings:mt-4 sm:prose-headings:mb-2 prose-h1:text-lg sm:prose-h1:text-xl prose-pre:p-2 sm:prose-pre:p-3 prose-li:my-0.5"
-            )}>
-                {parts.map((part, i) => renderPart(part, i))}
-                {isStreaming && (
-                  <motion.span 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: [0, 1, 0] }}
-                    transition={{ repeat: Infinity, duration: 0.8 }}
-                    className="inline-block w-1.5 h-4 sm:h-5 bg-primary/80 ml-1 align-middle shadow-[0_0_8px_rgba(var(--primary),0.5)] rounded-full" 
-                  />
-                )}
+        
+        {isThinking ? (
+            <div className="flex gap-1.5 p-3 sm:p-4 rounded-[1.2rem] sm:rounded-[1.5rem] bg-muted/10 border border-border/40 w-fit">
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className="size-1.5 rounded-full bg-primary/30" />
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="size-1.5 rounded-full bg-primary/30" />
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="size-1.5 rounded-full bg-primary/30" />
             </div>
-        </div>
+        ) : (
+            <div 
+              style={{ display: 'flex', alignItems: 'center', minHeight: '32px' }}
+              className={cn(
+                "transition-all w-fit max-w-full", 
+                isUser ? "px-4 sm:px-5 py-2 sm:py-2.5 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-sm border bg-indigo-50/30 border-indigo-100/40 rounded-tr-none text-indigo-950 font-medium" : 
+                ((!showDetails && parts.length > 0 && parts.every(p => {
+                    const type = (p.type || "").toLowerCase();
+                    const text = (p.text || (typeof p === 'string' ? p : "")).trim();
+                    if (!text && !p.name && !p.arguments && !p.args && !p.thinking && !p.thought) return true;
+                    return false;
+                })) ? "bg-transparent border-none shadow-none px-0 py-0" : "px-4 sm:px-5 py-2 sm:py-2.5 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-sm border bg-background border-border/50 rounded-tl-none")
+            )}>
+                <div className={cn(
+                    "max-w-none w-full break-words leading-tight sm:leading-6 text-[12px] sm:text-[14px]",
+                    parts.some(p => p.type === 'text' && (p.text.includes('#') || p.text.includes('```') || p.text.includes('|') || p.text.includes('- '))) ? "prose prose-sm dark:prose-invert [&&_*]:m-0" : "flex items-center"
+                )}>
+                    <div style={{ margin: 0, padding: 0 }} className="w-full">
+                        {parts.map((part, i) => renderPart(part, i))}
+                    </div>
+                    <motion.span 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: isStreaming ? [0, 1, 0] : 0 }}
+                        transition={{ repeat: isStreaming ? Infinity : 0, duration: 0.8 }}
+                        className="inline-block w-1.5 h-4 sm:h-5 bg-primary/80 ml-1 shrink-0 align-middle shadow-[0_0_8px_rgba(var(--primary),0.5)] rounded-full" 
+                    />
+                </div>
+            </div>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 });
 
