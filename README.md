@@ -73,6 +73,39 @@ docker-compose up -d
 
 ---
 
+---
+
+## 🌙 后台运行 (Background Running)
+
+如果您在服务器上部署并希望关闭终端后服务依然运行，可以选择以下方式：
+
+### 方式一：使用 PM2 (推荐)
+PM2 是 Node.js 进程管理器，支持自动重启与性能监控。
+```bash
+# 全局安装 PM2
+npm install pm2 -g
+
+# 启动服务
+pm2 start npm --name "openclaw-ui" -- run start
+
+# 查看状态
+pm2 list
+```
+
+### 方式二：使用 nohup (通用)
+在 Linux 环境下，可以使用原生 `nohup` 命令实现持久运行。
+```bash
+nohup npm run start > output.log 2>&1 &
+```
+
+### 方式三：Docker 后台运行
+如果您使用 Docker，确保带上 `-d` 参数即可：
+```bash
+docker-compose up -d
+```
+
+---
+
 ## 🐳 Docker 指南 (Docker Guide)
 
 ### 手动构建镜像
