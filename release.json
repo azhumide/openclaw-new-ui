@@ -1,7 +1,7 @@
 {
-  "tag_name": "v0.1.0",
-  "name": "v0.1.0 - Initial Modern UI Release",
-  "body": "## 🚀 OpenClaw New UI - v0.1.0\n\n### ✨ 核心 UI 升级\n- **全新登录页**：采用模块化玻璃拟态（Glassmorphism）设计，支持灵动的主题切换与细腻的交互动画。\n- **霓虹流线光标**：为 AI 响应添加了具有呼吸感的霓虹光标效果，提升输入仪式感。\n- **智能化 Thinking 指标**：引入脉冲扩散效果及自适应平移算法，优化思考状态展示。\n\n### ⚙️ 功能增强\n- **Monaco 源码配置**：集成专业级 Monaco 编辑器（VS Code 同款内核），支持高亮编辑网关配置。\n- **极简输出模式**：\n  - 工具调用自动转换为精致状态行。\n  - 技术性系统报文（JSON）默认折叠，提供“无框衬底”极致清爽视野。\n\n### 🛠️ 性能与交互\n- **平滑自适应滚动**：在用户浏览与 AI 吐字间智能平衡，告别界面抖动。\n- **全平台适配**：针对移动端手势与布局进行了深度像素级调优。",
+  "tag_name": "v0.1.1",
+  "name": "v0.1.1 - Chat UI Optimization & Version Sync",
+  "body": "## 🚀 OpenClaw New UI - v0.1.1\n\n### ✨ 聊天室优化 (Chat Room Optimization)\n- **气泡视觉修复**：完善聊天气泡文字的垂直居中算法，解决各种字体高度下的对齐偏差。\n- **渲染稳定性提升**：通过 `useMemo` 与稳定 `Key` 策略重构消息列表，大幅减少大消息量下的不必要重绘。\n- **平滑动画迁移**：将核心交互动画迁移至 `Framer Motion`，提供更细腻的淡入与滑入体感。\n\n### ⚙️ 核心架构增强 (Core Architecture Enhancement)\n- **版本中心化管理**：引入 `src/config/version.ts` 统一管理分布式组件中的版本字段。\n- **配置同步更新**：同步全局版本号至 `2026.3.14`，确保 UI 显示与后端核心逻辑一致。\n\n### 🛠️ 性能与初始化 (Performance & Init)\n- **状态流转优化**：重塑初始加载时的状态机，确保在慢网络连接下 UI 依然能维持平稳降级显示。",
   "draft": false,
   "prerelease": false
 }
