@@ -5,9 +5,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RefreshCw, Play, Clock, Settings, FileText, CheckCircle2, XCircle, AlertCircle, CalendarClock, Zap, Power, Activity, ChevronLeft } from "lucide-react";
+import { RefreshCw, Play, Clock, Settings, FileText, CheckCircle2, XCircle, AlertCircle, CalendarClock, Zap, Power, Activity, ChevronLeft, Info, MessageSquare, Bot } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
+import { CronJobDialog } from "./cron-job-dialog";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 
 const formatRelativeTime = (ms: number | null) => {
   if (!ms) return "未知";
@@ -42,6 +47,9 @@ export default function TasksPage() {
   const [runsLoading, setRunsLoading] = useState(false);
   const [runs, setRuns] = useState<any[]>([]);
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<any>(null);
+
   const fetchData = async () => {
     if (!client || !connected) return;
     setLoading(true);
@@ -64,7 +72,7 @@ export default function TasksPage() {
     setRunsLoading(true);
     try {
       const runsRes = await client.request("cron.runs", { scope: "job", id: jobId, limit: 50 });
-      setRuns((runsRes as any).runs || []);
+      setRuns((runsRes as any).entries || []);
     } catch (err: any) {
       toast({ title: "加载执行记录失败", description: err.message, variant: "destructive" });
     } finally {
@@ -110,6 +118,16 @@ export default function TasksPage() {
   };
 
   const selectedJob = jobs.find(j => j.id === selectedJobId);
+
+  const openCreateDialog = () => {
+    setEditingJob(null);
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (job: any) => {
+    setEditingJob(job);
+    setIsDialogOpen(true);
+  };
 
   return (
     <div className="flex flex-col h-full overflow-hidden animate-in fade-in duration-300">
@@ -173,7 +191,7 @@ export default function TasksPage() {
         )}>
           <div className="flex items-center justify-between px-2">
             <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">作业列表 ({jobs.length})</h2>
-            <Button variant="ghost" size="sm" className="h-8 text-xs text-primary hover:text-primary">
+            <Button variant="ghost" size="sm" onClick={openCreateDialog} className="h-8 text-xs text-primary hover:text-primary">
                + 新建作业
             </Button>
           </div>
@@ -187,7 +205,7 @@ export default function TasksPage() {
                   key={job.id} 
                   onClick={() => setSelectedJobId(job.id)}
                   className={cn(
-                    "p-2.5 sm:p-3 rounded-lg border transition-all cursor-pointer hover:bg-muted/50 flex flex-col gap-1.5 sm:gap-2",
+                    "p-2.5 sm:p-3 rounded-lg border transition-all cursor-pointer hover:bg-muted/50 flex flex-col gap-1.5 sm:gap-2 group",
                     selectedJobId === job.id ? "bg-muted/50 border-primary/50 shadow-sm" : "border-transparent bg-transparent"
                   )}
                 >
@@ -205,16 +223,27 @@ export default function TasksPage() {
                         <CalendarClock className="size-3" />
                         {formatSchedule(job.schedule)}
                      </div>
-                     <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 hover:bg-primary/20 hover:text-primary rounded-full"
-                        onClick={(e) => { e.stopPropagation(); forceRunJob(job); }}
-                        disabled={runningJobId === job.id}
-                        title="立即执行此任务"
-                     >
-                        <Zap className={cn("size-3", runningJobId === job.id && "animate-pulse")} />
-                     </Button>
+                     <div className="flex items-center gap-1">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 hover:bg-muted-foreground/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => { e.stopPropagation(); openEditDialog(job); }}
+                            title="编辑任务配置"
+                        >
+                            <Settings className="size-3" />
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 hover:bg-primary/20 hover:text-primary rounded-full"
+                            onClick={(e) => { e.stopPropagation(); forceRunJob(job); }}
+                            disabled={runningJobId === job.id}
+                            title="立即执行此任务"
+                        >
+                            <Zap className={cn("size-3", runningJobId === job.id && "animate-pulse")} />
+                        </Button>
+                     </div>
                   </div>
                 </div>
              ))}
@@ -232,7 +261,7 @@ export default function TasksPage() {
             </Button>
           )}
           {!selectedJob ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-4 opacity-60">
+            <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground gap-4 opacity-60">
                <CalendarClock className="size-16 stroke-1" />
                <p>在左侧选择一个 Cron Job 查看执行流水线</p>
             </div>
@@ -243,17 +272,56 @@ export default function TasksPage() {
                    <p className="text-muted-foreground mt-1">{selectedJob.description || "暂无描述"}</p>
                 </div>
                 
-                <Tabs defaultValue="runs" className="w-full">
-                  <TabsList className="bg-background border border-border/50">
-                    <TabsTrigger value="runs" className="data-[state=active]:bg-muted">
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="bg-background/50 border border-border/50 p-1 rounded-xl">
+                    <TabsTrigger value="overview" className="data-[state=active]:bg-muted rounded-lg px-4">
+                       <Info className="size-4 mr-2" />
+                       作业概览
+                    </TabsTrigger>
+                    <TabsTrigger value="runs" className="data-[state=active]:bg-muted rounded-lg px-4">
                        <Activity className="size-4 mr-2" />
                        执行流水线
                     </TabsTrigger>
-                    <TabsTrigger value="config" className="data-[state=active]:bg-muted">
+                    <TabsTrigger value="config" className="data-[state=active]:bg-muted rounded-lg px-4">
                        <Settings className="size-4 mr-2" />
-                       作业配置
+                       详细配置
                     </TabsTrigger>
                   </TabsList>
+
+                  <TabsContent value="overview" className="mt-4 space-y-4">
+                     <div className="grid grid-cols-2 gap-4">
+                        <Card className="p-4 bg-background/50 flex items-start gap-3">
+                           <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+                             <Clock className="size-4" />
+                           </div>
+                           <div className="space-y-1">
+                              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">执行频率</p>
+                              <p className="text-sm font-semibold">{formatSchedule(selectedJob.schedule)}</p>
+                           </div>
+                        </Card>
+                        <Card className="p-4 bg-background/50 flex items-start gap-3">
+                           <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                             <Bot className="size-4" />
+                           </div>
+                           <div className="space-y-1">
+                              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">执行目标</p>
+                              <p className="text-sm font-semibold">{selectedJob.payload?.kind === 'agentTurn' ? (selectedJob.payload.agentId || '默认代理') : '系统原生事件'}</p>
+                           </div>
+                        </Card>
+                     </div>
+
+                     <Card className="p-5 bg-background/50 border-border/50 relative overflow-hidden group">
+                        <div className="flex items-center gap-2 mb-4 text-primary">
+                           <MessageSquare className="size-4" />
+                           <h3 className="text-sm font-bold uppercase tracking-wider">任务载荷 (Payload)</h3>
+                        </div>
+                        <div className="relative">
+                           <div className="p-4 bg-muted/30 rounded-xl font-mono text-sm whitespace-pre-wrap break-words leading-relaxed border border-border/20">
+                              {selectedJob.payload?.kind === 'systemEvent' ? selectedJob.payload.text : selectedJob.payload?.message || '(无具体内容)'}
+                           </div>
+                        </div>
+                     </Card>
+                  </TabsContent>
                   
                   <TabsContent value="runs" className="mt-4 space-y-4">
                      {runsLoading ? (
@@ -264,8 +332,8 @@ export default function TasksPage() {
                         </div>
                      ) : (
                         <div className="space-y-3">
-                           {runs.map((run: any) => (
-                              <Card key={run.id} className="p-4 border-l-4 rounded-r-lg bg-background/50 transition-colors hover:bg-background border-y-border/50 border-r-border/50" style={{ borderLeftColor: run.status === 'ok' ? '#10b981' : run.status === 'skipped' ? '#f59e0b' : '#ef4444' }}>
+                           {runs.map((run: any, idx: number) => (
+                              <Card key={run.ts || idx} className="p-4 border-l-4 rounded-r-lg bg-background/50 transition-colors hover:bg-background border-y-border/50 border-r-border/50" style={{ borderLeftColor: run.status === 'ok' ? '#10b981' : run.status === 'skipped' ? '#f59e0b' : '#ef4444' }}>
                                  <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-2">
                                        {run.status === 'ok' ? <CheckCircle2 className="size-4 text-emerald-500" /> : 
@@ -276,13 +344,13 @@ export default function TasksPage() {
                                        </span>
                                        {run.mode === 'force' && <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded ml-2">手动触发</span>}
                                     </div>
-                                    <span className="text-xs text-muted-foreground font-mono">{new Date(run.startedAt).toLocaleString()}</span>
+                                    <span className="text-xs text-muted-foreground font-mono">{new Date(run.ts || run.runAtMs).toLocaleString()}</span>
                                  </div>
-                                 {(run.error || run.message) && (
-                                    <div className="mt-3 p-3 bg-muted/50 rounded-md">
-                                       <p className="text-xs font-mono break-words whitespace-pre-wrap opacity-80">
-                                          {run.error || run.message}
-                                       </p>
+                                 {(run.error || run.summary || run.message) && (
+                                    <div className="mt-3 p-3 sm:p-4 bg-muted/30 rounded-xl border border-border/10 prose dark:prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0">
+                                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {String(run.error || run.summary || run.message)}
+                                      </ReactMarkdown>
                                     </div>
                                  )}
                               </Card>
@@ -292,9 +360,15 @@ export default function TasksPage() {
                   </TabsContent>
                   
                   <TabsContent value="config" className="mt-4">
-                     <Card className="p-6 border-border/50 border-dashed bg-background/50 text-center text-muted-foreground min-h-[200px] flex flex-col items-center justify-center">
-                        <Settings className="size-8 opacity-20 mb-4" />
-                        编辑该 Job 的 Payload（代理节点、传递模型、角色指令）的表单即将在下一个版本释放。
+                     <Card className="p-6 border-border/50 border-dashed bg-background/50 text-center text-muted-foreground min-h-[220px] flex flex-col items-center justify-center space-y-4">
+                        <Settings className="size-8 opacity-20" />
+                        <div className="space-y-1">
+                            <p className="text-sm font-bold text-foreground">配置该作业的 Payload</p>
+                            <p className="text-xs">包括代理节点、提示词模板、模型路由及调度参数</p>
+                        </div>
+                        <Button onClick={() => openEditDialog(selectedJob)} className="rounded-xl px-8 shadow-lg shadow-primary/20 gap-2">
+                           <Settings className="size-4" /> 进入详细配置
+                        </Button>
                      </Card>
                   </TabsContent>
                 </Tabs>
@@ -302,6 +376,13 @@ export default function TasksPage() {
           )}
         </div>
       </div>
+
+      <CronJobDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+        job={editingJob} 
+        onSuccess={fetchData} 
+      />
     </div>
   );
 }

@@ -172,7 +172,7 @@ export default function UsagePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 shrink-0">
         {/* Daily Bar Chart */}
-        <Card className="col-span-1 lg:col-span-2 p-4 sm:p-6 border-border/50 bg-background/50 flex flex-col min-h-[250px] sm:min-h-[300px]">
+        <Card className="col-span-1 lg:col-span-2 p-4 sm:p-6 border-border/50 bg-background/50 flex flex-col h-[400px] lg:h-[500px]">
           <h2 className="text-sm sm:text-lg font-bold tracking-tight mb-4 sm:mb-6">每日消耗走势 (近 7 天)</h2>
           <div className="flex items-end gap-3 flex-1 pb-2">
             {daily.length === 0 && !loading ? (
@@ -182,10 +182,10 @@ export default function UsagePage() {
             ) : daily.map((d: any, i: number) => {
               const heightPct = Math.max((d.totalTokens / maxDailyTokens) * 100, 2);
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
-                  <div className="relative w-full flex justify-center h-[200px] items-end">
+                <div key={i} className="flex-1 flex flex-col items-center gap-2 group h-full">
+                  <div className="relative w-full flex justify-center items-end flex-1 min-h-0">
                     <div 
-                      className="w-full max-w-[40px] bg-primary/20 hover:bg-primary/40 rounded-t-md transition-all relative"
+                      className="w-full max-w-[32px] sm:max-w-[40px] bg-primary/20 hover:bg-primary/40 rounded-t-lg transition-all relative group/bar"
                       style={{ height: `${heightPct}%` }}
                     >
                       <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-10">
@@ -197,7 +197,7 @@ export default function UsagePage() {
                       />
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground font-mono truncate max-w-full px-1">
+                  <div className="text-xs text-muted-foreground font-mono truncate max-w-full px-1 pt-1">
                     {d.date.substring(5)}
                   </div>
                 </div>
@@ -207,7 +207,7 @@ export default function UsagePage() {
         </Card>
 
         {/* Top Sessions */}
-        <Card className="col-span-1 p-4 sm:p-6 border-border/50 bg-background/50 flex flex-col min-h-[250px] sm:min-h-[300px]">
+        <Card className="col-span-1 p-4 sm:p-6 border-border/50 bg-background/50 flex flex-col h-[400px] lg:h-[500px]">
            <h2 className="text-sm sm:text-lg font-bold tracking-tight mb-3 sm:mb-4 text-foreground">Top 会话算力榜单</h2>
            <div className="flex-1 flex flex-col gap-2 sm:gap-3 overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
              {sessions.length === 0 && !loading ? (
@@ -215,18 +215,36 @@ export default function UsagePage() {
                  无会话记录
                </div>
              ) : (
-               sessions.slice(0, 8).map((session: any, i: number) => (
-                 <div key={session.key || i} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
-                   <div className="flex flex-col min-w-0 pr-2 sm:pr-3">
-                     <span className="text-xs sm:text-sm font-semibold truncate text-foreground">{session.label || session.sessionId || session.key}</span>
-                     <span className="text-[8px] sm:text-[10px] text-muted-foreground font-mono mt-0.5 truncate bg-muted w-fit px-1 sm:px-1.5 py-0.5 rounded">{session.model || "Unknown Model"}</span>
+               sessions.slice(0, 8).map((session: any, i: number) => {
+                 const displayName = session.displayName || session.label || session.subject || session.firstUserMessage;
+                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(session.sessionId);
+                 const displayId = isUUID ? session.sessionId.slice(0, 8) : session.sessionId;
+                 const finalName = displayName || displayId || session.key;
+
+                 return (
+                   <div key={session.key || i} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-secondary/30 border border-border/50 hover:bg-secondary/50 transition-colors group">
+                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                       <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                         {i + 1}
+                       </div>
+                       <div className="flex flex-col min-w-0">
+                         <span className="text-xs sm:text-sm font-semibold truncate text-foreground" title={displayName || session.sessionId}>
+                           {finalName}
+                         </span>
+                         <div className="flex items-center gap-2">
+                           <span className="text-[10px] text-muted-foreground truncate">
+                             {session.model || 'Unknown Model'}
+                           </span>
+                         </div>
+                       </div>
+                     </div>
+                     <div className="flex flex-col items-end shrink-0">
+                       <span className="text-xs sm:text-sm font-bold text-primary">{formatTokens(session.usage?.totalTokens || 0)}</span>
+                       <span className="text-[8px] sm:text-[10px] text-muted-foreground mt-0.5">{formatCost(session.usage?.totalCost || 0)}</span>
+                     </div>
                    </div>
-                   <div className="flex flex-col items-end shrink-0">
-                     <span className="text-xs sm:text-sm font-bold text-primary">{formatTokens(session.usage?.totalTokens || 0)}</span>
-                     <span className="text-[8px] sm:text-[10px] text-muted-foreground mt-0.5">{formatCost(session.usage?.totalCost || 0)}</span>
-                   </div>
-                 </div>
-               ))
+                 );
+               })
              )}
            </div>
         </Card>

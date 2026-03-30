@@ -8,17 +8,58 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
   Bug, Play, RefreshCw, Activity, 
-  Heart, Zap, BrainCircuit, ListTree
+  Heart, Zap, BrainCircuit, ListTree, Copy, Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const COMMON_METHODS = [
   "status", "health", "last-heartbeat", "models.list", 
   "node.list", "device.pair.list", "config.get", 
   "cron.list", "skills.status", "gateway.auth.sessions"
 ];
+
+function JsonView({ json }: { json: any }) {
+  const [copied, setCopied] = useState(false);
+  const text = JSON.stringify(json, null, 2);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative group rounded-xl overflow-hidden border border-border/50 bg-[#1e1e1e] shadow-inner shadow-black/20 max-h-[400px] flex flex-col">
+      <div className="absolute top-2 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button 
+          variant="secondary" 
+          size="icon" 
+          className="h-7 w-7 bg-white/10 hover:bg-white/20 text-white backdrop-blur border-white/10"
+          onClick={handleCopy}
+        >
+          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+        </Button>
+      </div>
+      <div className="text-[11px] sm:text-xs font-mono leading-relaxed overflow-y-auto custom-scrollbar-dark flex-1">
+        <SyntaxHighlighter
+          language="json"
+          style={vscDarkPlus}
+          customStyle={{ 
+            margin: 0, 
+            padding: '1rem', 
+            background: 'transparent',
+            fontSize: 'inherit',
+            lineHeight: 'inherit'
+          }}
+        >
+          {text}
+        </SyntaxHighlighter>
+      </div>
+    </div>
+  );
+}
 
 export default function DebugPage() {
   const { client, connected } = useGateway();
@@ -73,18 +114,6 @@ export default function DebugPage() {
       setCalling(false);
     }
   };
-
-  const renderJson = (json: any) => (
-    <div className="rounded-xl overflow-hidden border border-border/50 text-[10px] sm:text-[11px]">
-      <SyntaxHighlighter
-        language="json"
-        style={atomDark}
-        customStyle={{ margin: 0, padding: '0.5rem', background: 'transparent', lineHeight: '1.4' }}
-      >
-        {JSON.stringify(json, null, 2)}
-      </SyntaxHighlighter>
-    </div>
-  );
 
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-8 animate-in fade-in duration-500">
@@ -169,7 +198,7 @@ export default function DebugPage() {
                       {rpcError}
                     </div>
                   ) : (
-                    renderJson(rpcResult)
+                    <JsonView json={rpcResult} />
                   )}
                 </div>
               )}
@@ -189,7 +218,7 @@ export default function DebugPage() {
                   暂无在线模型。
                 </div>
               ) : (
-                renderJson({ count: models.length, list: models })
+                <JsonView json={{ count: models.length, list: models }} />
               )}
             </div>
           </Card>
@@ -201,21 +230,21 @@ export default function DebugPage() {
             <div className="flex items-center gap-2 mb-3 sm:mb-4 text-[10px] sm:text-sm font-bold uppercase tracking-wider sm:tracking-widest text-muted-foreground">
               <Activity className="size-3.5 sm:size-4" /> 系统快照 (Status)
             </div>
-            {renderJson(snapshots.status || { loading: true })}
+            <JsonView json={snapshots.status || { loading: true }} />
           </Card>
 
           <Card className="p-3 sm:p-6 border-border/50 bg-muted/5 rounded-xl sm:rounded-2xl">
             <div className="flex items-center gap-2 mb-3 sm:mb-4 text-[10px] sm:text-sm font-bold uppercase tracking-wider sm:tracking-widest text-muted-foreground">
               <Zap className="size-3.5 sm:size-4" /> 健康自检 (Health)
             </div>
-            {renderJson(snapshots.health || { loading: true })}
+            <JsonView json={snapshots.health || { loading: true }} />
           </Card>
 
           <Card className="p-3 sm:p-6 border-border/50 bg-muted/5 rounded-xl sm:rounded-2xl">
             <div className="flex items-center gap-2 mb-3 sm:mb-4 text-[10px] sm:text-sm font-bold uppercase tracking-wider sm:tracking-widest text-muted-foreground">
               <Heart className="size-3.5 sm:size-4" /> 心跳追踪 (Heartbeat)
             </div>
-            {renderJson(snapshots.heartbeat || { loading: true })}
+            <JsonView json={snapshots.heartbeat || { loading: true }} />
           </Card>
         </div>
       </div>

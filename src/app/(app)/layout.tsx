@@ -49,6 +49,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // Auto-close mobile sidebar when navigating
   useEffect(() => {
@@ -210,9 +211,12 @@ function AppContent({ children }: { children: React.ReactNode }) {
              <Button variant="ghost" size="icon" onClick={() => setMobileSidebarOpen(true)} className="rounded-xl hover:bg-muted shrink-0 lg:hidden">
                <PanelLeft className="size-4 text-muted-foreground" />
              </Button>
-             <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 bg-muted/50 rounded-full text-[9px] sm:text-[11px] font-medium border border-border/50">
+             <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 bg-muted/50 rounded-full text-[9px] sm:text-[11px] font-medium border border-border/50 shrink-0">
                <span className={cn("size-1.5 sm:size-2 rounded-full shrink-0", connected ? "bg-green-500" : "bg-red-500 animate-pulse")} />
-               <span className="hidden sm:inline">版本 {snapshot?.server?.version || APP_VERSION}</span>
+               <span className="flex items-center gap-1">
+                 <span className="hidden sm:inline">版本</span>
+                 <span>{snapshot?.server?.version || APP_VERSION}</span>
+               </span>
              </div>
              <div className={cn(
                "flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 rounded-full text-[9px] sm:text-[11px] font-medium border shrink-0",
@@ -230,8 +234,10 @@ function AppContent({ children }: { children: React.ReactNode }) {
                <DropdownMenuTrigger asChild>
                  <Button variant="ghost" size="icon" className="rounded-full size-8 sm:size-10 relative">
                    <Bell className="size-3.5 sm:size-4 text-muted-foreground" />
-                   {/* notification indicator */}
-                   <span className="absolute top-1.5 right-1.5 size-1.5 sm:size-2 bg-red-500 rounded-full border-2 border-background animate-pulse" />
+                   {/* notification indicator - only show if there are notifications */}
+                   {notifications.length > 0 && (
+                     <span className="absolute top-1.5 right-1.5 size-1.5 sm:size-2 bg-red-500 rounded-full border-2 border-background animate-pulse" />
+                   )}
                  </Button>
                </DropdownMenuTrigger>
                <DropdownMenuContent align="end" className="w-72 sm:w-80 p-0 border-border/50 shadow-2xl rounded-xl sm:rounded-2xl overflow-hidden mt-1 sm:mt-2">

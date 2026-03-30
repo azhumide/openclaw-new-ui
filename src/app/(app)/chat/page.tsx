@@ -79,12 +79,13 @@ const markdownComponents = {
                 language={match[1]}
                 PreTag="div"
                 className="rounded-xl my-4 text-xs"
+                customStyle={{ background: 'transparent', padding: '1.2rem' }}
                 {...props}
             >
                 {String(children).replace(/\n$/, "")}
             </SyntaxHighlighter>
         ) : (
-            <code className={cn("bg-muted px-1.5 py-0.5 rounded text-xs", className)} {...props}>
+            <code className={cn(inline ? "bg-muted px-1.5 py-0.5 rounded text-xs" : "bg-transparent", className)} {...props}>
                 {children}
             </code>
         );
@@ -566,7 +567,7 @@ export default function ChatPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
-                className="max-w-4xl mx-auto space-y-8 sm:space-y-12 pb-32 sm:pb-40"
+                className="max-w-4xl mx-auto space-y-8 sm:space-y-12 pb-44 sm:pb-40"
             >
                 {messages.length === 0 && !isTyping && !streamingMessage && (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground pt-40 opacity-20 select-none">
@@ -613,7 +614,7 @@ export default function ChatPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
-            className="absolute bottom-0 left-0 right-0 p-3 sm:p-8 pt-8 sm:pt-12 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none"
+            className="absolute bottom-0 left-0 right-0 px-4 pb-10 pt-8 sm:p-8 bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-none"
         >
             <div className="max-w-4xl mx-auto pointer-events-auto">
                 <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mb-2 sm:mb-4">
@@ -812,39 +813,38 @@ export default function ChatPage() {
                             ))}
                         </div>
                     )}
-                    <div className={cn(
-                        "absolute -inset-1 bg-gradient-to-r from-primary/30 via-purple-500/30 to-blue-500/30 rounded-[2.5rem] blur opacity-10 group-focus-within/input:opacity-50 transition duration-500",
-                        isDragging && "opacity-100 ring-2 ring-primary scale-[1.01]"
-                    )}></div>
-                    <Card className={cn(
-                        "relative bg-background/80 backdrop-blur-md border-border shadow-2xl rounded-[1.5rem] sm:rounded-[2.2rem] overflow-hidden p-2 sm:p-3 flex items-center gap-2 sm:gap-3 pr-3 sm:pr-5 transition-all focus-within:ring-2 ring-primary/20",
-                        isDragging && "bg-primary/5 border-primary/40 shadow-primary/20"
+                    <div 
+                        className={cn(
+                        "relative bg-white/95 dark:bg-zinc-950/95 backdrop-blur-2xl border border-primary/20 dark:border-primary/30 shadow-[0_20px_50px_-15px_rgba(var(--primary),0.08)] rounded-[1.8rem] sm:rounded-[2.5rem] overflow-hidden p-2 sm:p-2.5 flex items-center gap-2 sm:gap-3 pr-3 sm:pr-4 transition-all duration-300",
+                        isDragging && "bg-primary/5 border-primary/40 ring-2 ring-primary/20 shadow-primary/20"
                     )}>
+                        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                        
                         <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
                         <Button 
                             variant="ghost" 
                             size="icon" 
                             onClick={() => fileInputRef.current?.click()}
-                            className="rounded-xl sm:rounded-2xl size-8 sm:size-10 shrink-0 hover:bg-muted sm:ml-1"
+                            className="rounded-2xl size-9 sm:size-11 shrink-0 bg-primary/5 text-primary/60 hover:text-primary hover:bg-primary/10 transition-all active:scale-90"
                         >
-                            <Plus className="size-5 text-muted-foreground" />
+                            <Plus className="size-5" />
                         </Button>
                         <textarea
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                             placeholder="Message OpenClaw..."
-                            className="flex-1 bg-transparent border-none focus:ring-0 resize-none min-h-[40px] sm:min-h-[48px] max-h-32 sm:max-h-48 py-2 sm:py-3 px-1 sm:px-2 text-sm sm:text-base font-medium custom-scrollbar"
+                            className="flex-1 bg-transparent border-none focus:ring-0 resize-none min-h-[44px] sm:min-h-[52px] max-h-32 sm:max-h-48 py-3 px-1 text-sm sm:text-[15px] font-medium custom-scrollbar placeholder:text-muted-foreground/40 leading-relaxed"
                             rows={1}
                         />
                         <Button 
                             onClick={handleSend}
                             disabled={!inputText.trim() || !connected}
-                            className="rounded-xl sm:rounded-2xl size-9 sm:size-11 grow-0 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/20 active:scale-90 transition-all shrink-0"
+                            className="rounded-2xl size-9 sm:size-11 grow-0 bg-gradient-to-br from-indigo-500 via-primary to-violet-600 text-white shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 active:scale-90 transition-all duration-300 shrink-0"
                         >
-                            <Send className="size-4 sm:size-5" />
+                            <Send className="size-4 sm:size-5 rotate-[-10deg]" />
                         </Button>
-                    </Card>
+                    </div>
                 </motion.div>
             </div>
         </motion.div>
@@ -1126,6 +1126,31 @@ const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, m
   const timestamp = rawTs ? new Date(rawTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "";
   const fromId = message?.from;
 
+  // 判断是否纯技术/结构化内容
+  const isPureStructured = useMemo(() => {
+    if (isUser || isThinking || parts.length === 0) return false;
+    
+    return parts.every(p => {
+        const type = (p.type || "").toLowerCase();
+        const text = (p.text || (typeof p === 'string' ? p : "")).trim();
+
+        // 1. 结构化组件：工具调用、结果、思考过程
+        const isTool = ["tool_call", "tool_result", "toolcall", "toolresult", "tool_use", "tool-call", "tool-result"].includes(type) || p.name || p.toolCallId;
+        const isThinkingPart = ["thinking", "thought", "reasoning"].includes(type) || p.thinking || p.thought;
+        if (isTool || isThinkingPart) return true;
+
+        // 2. 技术载荷文本（会被渲染为 SYSTEM DATA 卡片的内容）
+        if (!showDetails && (text.startsWith("{") || text.includes("<EXTERNAL_UNTRUSTED_CONTENT"))) return true;
+
+        // 3. 空白或控制标签
+        const cleanText = text.replace(/<\/?final>/g, "").trim();
+        if (cleanText.length === 0) return true;
+
+        // 其他所有带实际文字的内容都需要外层气泡包裹
+        return false;
+    });
+  }, [isUser, isThinking, parts, showDetails]);
+
   if (parts.length === 0 && !isStreaming && !isThinking) return null;
 
   return (
@@ -1162,12 +1187,7 @@ const MessageItem = memo(({ role, content, sender, isStreaming, onOpenSidebar, m
               className={cn(
                 "transition-all w-fit max-w-full", 
                 isUser ? "px-4 sm:px-5 py-2 sm:py-2.5 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-sm border bg-indigo-50/30 border-indigo-100/40 rounded-tr-none text-indigo-950 font-medium" : 
-                ((!showDetails && parts.length > 0 && parts.every(p => {
-                    const type = (p.type || "").toLowerCase();
-                    const text = (p.text || (typeof p === 'string' ? p : "")).trim();
-                    if (!text && !p.name && !p.arguments && !p.args && !p.thinking && !p.thought) return true;
-                    return false;
-                })) ? "bg-transparent border-none shadow-none px-0 py-0" : "px-4 sm:px-5 py-2 sm:py-2.5 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-sm border bg-background border-border/50 rounded-tl-none")
+                (isPureStructured ? "bg-transparent border-none shadow-none px-0 py-0" : "px-4 sm:px-5 py-2 sm:py-2.5 rounded-[1.2rem] sm:rounded-[1.5rem] shadow-sm border bg-background border-border/50 rounded-tl-none")
             )}>
                 <div className={cn(
                     "max-w-none w-full break-words leading-tight sm:leading-6 text-[12px] sm:text-[14px]",

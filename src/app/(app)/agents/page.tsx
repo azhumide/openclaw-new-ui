@@ -5,8 +5,26 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bot, RefreshCw, Cpu, Box, Fingerprint, ChevronLeft } from "lucide-react";
+import { 
+  Bot, RefreshCw, Cpu, Box, Fingerprint, 
+  ChevronLeft, ChevronRight, Plus, Trash2, Shield, 
+  FileText, Zap, Brain, MessageSquare, 
+  Globe, LayoutGrid, Terminal, ExternalLink,
+  Search, Wand2, Star, CheckCircle2, AlertTriangle,
+  History, Clock, MoreVertical, Sliders
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CreateAgentDialog } from "@/components/create-agent-dialog";
+import { AgentConfigEditor } from "@/components/agent-config-editor";
+import { AgentSkillPanel } from "@/components/agent-skill-panel";
+import { AgentLogPanel } from "@/components/agent-log-panel";
+
+interface SkillItem {
+  name: string;
+  id: string;
+  description?: string;
+  source?: string;
+}
 
 export default function AgentsPage() {
   const { client, connected } = useGateway();
@@ -15,6 +33,9 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(false);
   const [agentsList, setAgentsList] = useState<any>(null);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [skills, setSkills] = useState<SkillItem[]>([]);
 
   const fetchAgents = async () => {
     if (!client || !connected) return;
@@ -28,7 +49,7 @@ export default function AgentsPage() {
     } catch (err: any) {
       toast({
         title: "无法获取代理列表",
-        description: err.message || "请求 agents.list 失败",
+        description: err.message,
         variant: "destructive",
       });
     } finally {
@@ -36,8 +57,40 @@ export default function AgentsPage() {
     }
   };
 
+  const fetchSkills = async () => {
+    if (!client || !connected) return;
+    try {
+      const res = await client.request("skills.status");
+      setSkills(res.skills || []);
+    } catch (e) {
+      console.error("Failed to fetch skills", e);
+    }
+  };
+
+  const handleDeleteAgent = async () => {
+    if (!client || !selectedAgentId) return;
+    if (selectedAgentId === agentsList?.defaultId) {
+      toast({ title: "删除失败", description: "默认代理不允许删除。", variant: "destructive" });
+      return;
+    }
+    if (!confirm(`确定要永久删除代理 ${selectedAgentId} 吗？\n该操作将移除其配置文件和所有上下文。`)) return;
+
+    setDeleting(true);
+    try {
+      await client.request("agents.delete", { agentId: selectedAgentId });
+      toast({ title: "删除成功", description: `代理 ${selectedAgentId} 已被移除。` });
+      setSelectedAgentId(null);
+      fetchAgents();
+    } catch (err: any) {
+      toast({ title: "删除失败", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   useEffect(() => {
     fetchAgents();
+    fetchSkills();
   }, [client, connected]);
 
   const agents = agentsList?.agents || [];
@@ -51,13 +104,21 @@ export default function AgentsPage() {
         selectedAgentId && "hidden md:flex"
       )}>
         <div className="p-3 sm:p-4 border-b border-border/50 flex items-center justify-between bg-muted/20">
-          <div>
+          <div className="flex flex-col">
             <h2 className="font-bold tracking-tight text-sm sm:text-base">智能代理列表</h2>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{agents.length} 个配置单元</p>
+            <div className="flex items-center gap-2 mt-0.5">
+                <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                <p className="text-[10px] sm:text-xs text-muted-foreground uppercase font-black opacity-60 tracking-wider ">{agents.length} AGENTS ONLINE</p>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={fetchAgents} disabled={loading} className="size-8 rounded-full">
-            <RefreshCw className={cn("size-3.5 sm:size-4 text-muted-foreground", loading && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={fetchAgents} disabled={loading} className="size-8 rounded-full hover:bg-background shadow-sm hover:rotate-180 transition-transform duration-500">
+                <RefreshCw className={cn("size-3.5 sm:size-4 text-muted-foreground", loading && "animate-spin")} />
+            </Button>
+            <Button variant="default" size="icon" onClick={() => setCreateDialogOpen(true)} className="size-8 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform text-primary-foreground">
+                <Plus className="size-3.5 sm:size-4" />
+            </Button>
+          </div>
         </div>
         
         <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-1.5 sm:space-y-2 custom-scrollbar">
@@ -155,67 +216,144 @@ export default function AgentsPage() {
              
              <div className="flex-1 min-h-0 flex flex-col">
                <Tabs defaultValue="overview" className="flex-1 flex flex-col">
-                 <TabsList className="w-full justify-start bg-transparent border-b border-border/50 rounded-none h-8 sm:h-12 p-0 space-x-4 sm:space-x-6">
-                   <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-1 sm:py-3 px-1 text-[11px] sm:text-sm font-medium">概览</TabsTrigger>
-                   <TabsTrigger value="files" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-1 sm:py-3 px-1 text-[11px] sm:text-sm font-medium">配置</TabsTrigger>
-                   <TabsTrigger value="tools" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-1 sm:py-3 px-1 text-[11px] sm:text-sm font-medium">工具</TabsTrigger>
-                   <TabsTrigger value="skills" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-1 sm:py-3 px-1 text-[11px] sm:text-sm font-medium">技能</TabsTrigger>
-                 </TabsList>
-                 
-                 <TabsContent value="overview" className="flex-1 mt-3 sm:mt-6 space-y-3 sm:space-y-6 focus-visible:outline-none">
-                    <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
-                      <Card className="p-2 sm:p-5 border-border/50 space-y-1 sm:space-y-4 hover:border-primary/20 transition-colors bg-background/50 rounded-lg sm:rounded-xl flex flex-col items-center sm:items-start">
-                         <div className="flex items-center gap-1.5 text-primary">
-                           <Fingerprint className="size-3 sm:size-4" />
-                           <h3 className="font-semibold text-[8px] sm:text-sm text-foreground uppercase tracking-tighter sm:tracking-wider">身份</h3>
+                  <TabsList className="w-full justify-start bg-transparent border-b border-border/50 rounded-none h-8 sm:h-12 p-0 space-x-4 sm:space-x-8">
+                    <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-1 sm:py-3 px-1 text-[11px] sm:text-xs font-black uppercase tracking-widest transition-all">概览</TabsTrigger>
+                    <TabsTrigger value="files" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-1 sm:py-3 px-1 text-[11px] sm:text-xs font-black uppercase tracking-widest transition-all">工作空间</TabsTrigger>
+                    <TabsTrigger value="skills" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-1 sm:py-3 px-1 text-[11px] sm:text-xs font-black uppercase tracking-widest transition-all">技能库</TabsTrigger>
+                    <TabsTrigger value="activity" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none py-1 sm:py-3 px-1 text-[11px] sm:text-xs font-black uppercase tracking-widest transition-all">调试与日志</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="overview" className="flex-1 mt-3 sm:mt-6 space-y-4 focus-visible:outline-none overflow-y-auto pb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
+                      <Card className="p-4 sm:p-6 border-border/50 space-y-3 bg-background/50 rounded-2xl relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <Shield className="size-16" />
                          </div>
-                         <div className="text-[9px] sm:text-sm truncate w-full text-center sm:text-left">{selectedAgent.identity?.name || selectedAgent.name}</div>
+                         <div className="flex items-center gap-2 text-primary">
+                           <LayoutGrid className="size-4" />
+                           <h3 className="font-bold text-[10px] uppercase tracking-widest">身份与作用域</h3>
+                         </div>
+                         <div className="space-y-2 relative z-10">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="opacity-60">作用域</span>
+                                <span className="font-mono font-bold uppercase">{selectedAgent.scope || "Isolated"}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="opacity-60">身份名</span>
+                                <span className="font-bold">{selectedAgent.identity?.name || "未指定"}</span>
+                            </div>
+                         </div>
                       </Card>
-                      <Card className="p-2 sm:p-5 border-border/50 space-y-1 sm:space-y-4 hover:border-primary/20 transition-colors bg-background/50 rounded-lg sm:rounded-xl flex flex-col items-center sm:items-start">
-                         <div className="flex items-center gap-1.5 text-blue-500">
-                           <Cpu className="size-3 sm:size-4" />
-                           <h3 className="font-semibold text-[8px] sm:text-sm text-foreground uppercase tracking-tighter sm:tracking-wider">级别</h3>
+
+                      <Card className="p-4 sm:p-6 border-border/50 space-y-3 bg-background/50 rounded-2xl relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <Brain className="size-16 text-emerald-500" />
                          </div>
-                         <div className="text-[9px] sm:text-sm truncate w-full text-center sm:text-left">{selectedAgent.scope === "isolated" ? "独立" : "完全"}</div>
+                         <div className="flex items-center gap-2 text-emerald-500">
+                           <Zap className="size-4" />
+                           <h3 className="font-bold text-[10px] uppercase tracking-widest">计算模型</h3>
+                         </div>
+                         <div className="space-y-2 relative z-10">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="opacity-60">基础模型</span>
+                                <span className="font-mono text-[10px] sm:text-xs font-bold truncate max-w-[120px]">{selectedAgent.model || "Default Model"}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="opacity-60">思考等级</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="font-bold uppercase italic text-[11px]">Fully Powered</span>
+                                </div>
+                            </div>
+                         </div>
                       </Card>
-                      <Card className="p-2 sm:p-5 border-border/50 space-y-1 sm:space-y-4 hover:border-primary/20 transition-colors bg-background/50 rounded-lg sm:rounded-xl flex flex-col items-center sm:items-start">
-                         <div className="flex items-center gap-1.5 text-green-500">
-                           <Box className="size-3 sm:size-4" />
-                           <h3 className="font-semibold text-[8px] sm:text-sm text-foreground uppercase tracking-tighter sm:tracking-wider">网关</h3>
+
+                      <Card className="p-4 sm:p-6 border-border/50 space-y-3 bg-background/50 rounded-2xl relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <Box className="size-16 text-indigo-500" />
                          </div>
-                         <div className="text-[9px] sm:text-sm font-mono text-muted-foreground truncate w-full text-center sm:text-left">{agentsList?.mainKey || "N/A"}</div>
+                         <div className="flex items-center gap-2 text-indigo-500">
+                           <Globe className="size-4" />
+                           <h3 className="font-bold text-[10px] uppercase tracking-widest">网关连接</h3>
+                         </div>
+                         <div className="space-y-2 relative z-10">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="opacity-60">主网关</span>
+                                <span className="font-mono font-bold uppercase">{agentsList?.mainKey || "MAIN"}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="opacity-60">状态</span>
+                                <span className="font-bold text-indigo-500 flex items-center gap-1">
+                                    <CheckCircle2 className="size-3" />
+                                    Active
+                                </span>
+                            </div>
+                         </div>
                       </Card>
                     </div>
-                    <Card className="p-3 sm:p-6 border-border/50 border-dashed bg-muted/10 text-center text-muted-foreground flex flex-col items-center justify-center min-h-[80px] sm:min-h-[150px] rounded-lg">
-                      <p className="text-[10px] sm:text-sm">模型选择器/路由规则组装中</p>
+
+                    <Card className="p-6 sm:p-10 border-border/50 bg-muted/10 overflow-hidden relative rounded-2xl group">
+                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+                          <div className="space-y-2">
+                             <h4 className="font-black text-xs uppercase tracking-[0.2em] opacity-40">Agent Workspace</h4>
+                             <p className="text-sm font-medium opacity-80 leading-relaxed font-mono truncate max-w-[400px]">
+                                {selectedAgent.workspace || "Auto-resolved from gateway configuration"}
+                             </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                             <Button variant="outline" className="rounded-xl font-bold text-xs gap-2 border-border/40 hover:bg-background">
+                                <ExternalLink className="size-3.5" />
+                                打开目录
+                             </Button>
+                          </div>
+                       </div>
                     </Card>
+
+                    <div className="pt-6 border-t border-border/20">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <h4 className="text-sm font-bold text-destructive flex items-center gap-2">
+                                    <AlertTriangle className="size-4" />
+                                    危险操作区
+                                </h4>
+                                <p className="text-[11px] text-muted-foreground">删除此代理将清除其所有在网关上的配置以及工作空间文件。</p>
+                            </div>
+                            <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                disabled={deleting}
+                                onClick={handleDeleteAgent}
+                                className="rounded-xl font-bold px-5 shadow-lg shadow-destructive/20 active:scale-95 transition-all"
+                            >
+                                {deleting ? <RefreshCw className="size-3.5 animate-spin mr-2" /> : <Trash2 className="size-3.5 mr-2" />}
+                                彻底移除代理
+                            </Button>
+                        </div>
+                    </div>
                   </TabsContent>
                   
-                  <TabsContent value="files" className="flex-1 mt-3 sm:mt-6 focus-visible:outline-none">
-                    <Card className="p-4 sm:p-12 border-border/50 border-dashed bg-muted/10 text-center text-muted-foreground flex flex-col items-center justify-center min-h-[150px] sm:min-h-[300px] rounded-lg">
-                      <Box className="size-5 sm:size-8 opacity-20 mb-2" />
-                      <p className="text-[10px] sm:text-sm font-medium text-center">配置与提示词修改开发中</p>
-                    </Card>
+                  <TabsContent value="files" className="flex-1 mt-3 sm:mt-6 focus-visible:outline-none h-full overflow-hidden">
+                    <AgentConfigEditor agentId={selectedAgent.id} />
                   </TabsContent>
                   
-                  <TabsContent value="tools" className="flex-1 mt-3 sm:mt-6 focus-visible:outline-none">
-                    <Card className="p-4 sm:p-12 border-border/50 border-dashed bg-muted/10 text-center text-muted-foreground flex flex-col items-center justify-center min-h-[150px] sm:min-h-[300px] rounded-lg">
-                      <Cpu className="size-5 sm:size-8 opacity-20 mb-2" />
-                      <p className="text-[10px] sm:text-sm font-medium text-center">专属工具面板开发中</p>
-                    </Card>
+                  <TabsContent value="skills" className="flex-1 mt-3 sm:mt-6 focus-visible:outline-none h-full overflow-hidden">
+                    <AgentSkillPanel agentId={selectedAgent.id} />
                   </TabsContent>
                   
-                  <TabsContent value="skills" className="flex-1 mt-3 sm:mt-6 focus-visible:outline-none">
-                    <Card className="p-4 sm:p-12 border-border/50 border-dashed bg-muted/10 text-center text-muted-foreground flex flex-col items-center justify-center min-h-[150px] sm:min-h-[300px] rounded-lg">
-                      <Fingerprint className="size-5 sm:size-8 opacity-20 mb-2" />
-                      <p className="text-[10px] sm:text-sm font-medium text-center">专属技能库开发中</p>
-                    </Card>
+                  <TabsContent value="activity" className="flex-1 mt-3 sm:mt-6 focus-visible:outline-none h-full overflow-hidden">
+                    <AgentLogPanel agentId={selectedAgent.id} />
                   </TabsContent>
                </Tabs>
              </div>
            </div>
         )}
       </div>
+
+      <CreateAgentDialog 
+        open={createDialogOpen} 
+        onOpenChange={setCreateDialogOpen} 
+        onCreated={fetchAgents} 
+      />
     </div>
   );
 }

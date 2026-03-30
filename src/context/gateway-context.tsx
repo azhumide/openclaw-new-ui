@@ -9,6 +9,7 @@ interface GatewayContextType {
   error: string | null;
   presence: any[];
   health: any;
+  latency: number | null;
   client: GatewayClient | null;
 }
 
@@ -20,6 +21,7 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [presence, setPresence] = useState<any[]>([]);
   const [health, setHealth] = useState<any>(null);
+  const [latency, setLatency] = useState<number | null>(null);
   const clientRef = useRef<GatewayClient | null>(null);
 
   useEffect(() => {
@@ -39,7 +41,10 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
             console.log("[GatewayProvider] Connected!", hello);
             setConnected(true);
             setError(null);
-            setSnapshot(hello.payload || hello.snapshot || {}); 
+            setSnapshot({
+                ...(hello.payload || hello.snapshot || {}),
+                server: hello.server
+            }); 
             const sn = hello.payload || hello.snapshot;
             if (sn) {
                 if (sn.presence) setPresence(sn.presence);
@@ -79,8 +84,33 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // 延迟测速循环
+  useEffect(() => {
+    if (!connected || !clientRef.current) {
+        setLatency(null);
+        return;
+    }
+
+    const measure = async () => {
+        if (!clientRef.current || !connected) return;
+        const start = Date.now();
+        try {
+            // 使用简化的 health 请求进行测速
+            await clientRef.current.request("health", { probe: false });
+            setLatency(Date.now() - start);
+        } catch (e) {
+            console.debug("[GatewayProvider] Ping failed", e);
+        }
+    };
+
+    // 初始执行一次
+    measure();
+    const timer = setInterval(measure, 10000); // 每 10 秒测一次
+    return () => clearInterval(timer);
+  }, [connected]);
+
   return (
-    <GatewayContext.Provider value={{ connected, snapshot, error, presence, health, client: clientRef.current }}>
+    <GatewayContext.Provider value={{ connected, snapshot, error, presence, health, latency, client: clientRef.current }}>
       {children}
     </GatewayContext.Provider>
   );

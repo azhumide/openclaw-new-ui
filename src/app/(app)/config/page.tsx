@@ -11,8 +11,15 @@ import {
   Settings, Save, Play, RefreshCw, Search, 
   Code, Layout, FileJson, AlertCircle, CheckCircle2,
   ChevronRight, ChevronLeft, Globe, Shield, MessageSquare, Zap, Cpu,
-  Database, Bell, Terminal, Palette, Layers, Box
+  Database, Bell, Terminal, Palette, Layers, Box, ChevronDown, Check
 } from "lucide-react";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import Editor from "@monaco-editor/react";
 
@@ -37,6 +44,7 @@ export default function ConfigPage() {
   const [originalRaw, setOriginalRaw] = useState("");
   const [configObj, setConfigObj] = useState<any>({});
   const [snapshot, setSnapshot] = useState<any>(null);
+  const [models, setModels] = useState<{ label: string, value: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
 
@@ -44,12 +52,28 @@ export default function ConfigPage() {
     if (!client || !connected) return;
     setLoading(true);
     try {
-      const res: any = await client.request("config.get", {});
+      const [res, modelRes]: any[] = await Promise.all([
+        client.request("config.get", {}),
+        client.request("models.list", {})
+      ]);
       setSnapshot(res);
       const raw = res.raw || JSON.stringify(res.config || {}, null, 2);
       setRawConfig(raw);
       setOriginalRaw(raw);
       setConfigObj(res.config || {});
+      
+      if (modelRes && modelRes.models) {
+        const uniqueModels = new Map();
+        modelRes.models.forEach((m: any) => {
+          if (!uniqueModels.has(m.id)) {
+            uniqueModels.set(m.id, {
+              label: `${m.name || m.id} (${m.provider || "local"})`,
+              value: m.id
+            });
+          }
+        });
+        setModels(Array.from(uniqueModels.values()));
+      }
     } catch (err: any) {
       toast({ title: "加载配置失败", description: err.message, variant: "destructive" });
     } finally {
@@ -131,26 +155,61 @@ export default function ConfigPage() {
     setRawConfig(JSON.stringify(next, null, 2));
   };
 
-  const renderField = (label: string, path: string, type: "string" | "number" | "boolean", description?: string) => {
-    const value = path.split(".").reduce((o, i) => o?.[i], configObj);
+  const renderField = (label: string, path: string, type: "string" | "number" | "boolean" | "select", description?: string, options?: { label: string, value: any }[]) => {
+    let rawValue = path.split(".").reduce((o, i) => o?.[i], configObj);
+    
+    // Handle object values like { primary: "..." } for models
+    const displayValue = (typeof rawValue === 'object' && rawValue !== null) 
+      ? (rawValue.primary || JSON.stringify(rawValue)) 
+      : (rawValue ?? "");
+
     return (
       <div className="group space-y-1.5 sm:space-y-2 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-transparent hover:border-border/50 hover:bg-muted/30 transition-all">
         <div className="flex items-center justify-between">
           <label className="text-[11px] sm:text-sm font-semibold">{label}</label>
           {type === "boolean" ? (
             <Switch 
-              checked={!!value} 
+              checked={!!rawValue} 
               onCheckedChange={(v) => handleFormUpdate(path, v)}
               className="scale-75 sm:scale-90"
             />
           ) : null}
         </div>
+        
         {description && <p className="hidden sm:block text-[11px] text-muted-foreground leading-relaxed">{description}</p>}
-        {type !== "boolean" && (
+        
+        {type === "select" && options ? (
+          <Select value={displayValue || ""} onValueChange={(v: string) => handleFormUpdate(path, v)}>
+            <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm bg-background/50 border-border/50 focus:ring-primary/20">
+              <SelectValue placeholder="请选择..." />
+            </SelectTrigger>
+            <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50 rounded-xl">
+              {/* If current value is not in options, show it as a special item to avoid blank display */}
+              {displayValue && !options.some(o => o.value === displayValue) && (
+                <SelectItem key="current-val" value={displayValue} className="text-xs sm:text-sm rounded-lg opacity-60">
+                  {displayValue} (当前使用)
+                </SelectItem>
+              )}
+              {options.map((opt, idx) => (
+                <SelectItem key={`${opt.value}-${idx}`} value={opt.value} className="text-xs sm:text-sm rounded-lg focus:bg-primary/10 focus:text-primary">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : type !== "boolean" && (
           <Input 
-            value={value ?? ""} 
+            value={displayValue} 
             type={type === "number" ? "number" : "text"}
-            onChange={(e) => handleFormUpdate(path, type === "number" ? Number(e.target.value) : e.target.value)}
+            onChange={(e) => {
+              const val = type === "number" ? Number(e.target.value) : e.target.value;
+              // If it was an object, we update the primary field to keep structure, or just overwrite if it's simpler
+              if (typeof rawValue === 'object' && rawValue !== null && 'primary' in rawValue) {
+                handleFormUpdate(path, { ...rawValue, primary: val });
+              } else {
+                handleFormUpdate(path, val);
+              }
+            }}
             className="h-8 sm:h-9 text-xs sm:text-sm bg-background/50 border-border/50 focus:border-primary/30"
           />
         )}
@@ -311,10 +370,18 @@ export default function ConfigPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                   {activeSection === "agents" && (
                     <>
-                      {renderField("默认模型", "agents.defaultModel", "string", "系统全局默认使用的 AI 模型 ID")}
-                      {renderField("多智能体模式", "agents.multiAgent", "boolean", "是否开启多 Agent 协作工作流")}
-                      {renderField("上下文窗口", "agents.contextTokens", "number", "单次对话允许注入的最大 Token 数")}
-                      {renderField("推理等级", "agents.reasoningLevel", "string", "模型思考活跃度 (low/medium/high)")}
+                      {renderField("默认模型", "agents.defaults.model", "select", "系统全局默认使用的 AI 模型 ID", models)}
+                      {renderField("上下文窗口", "agents.defaults.contextTokens", "number", "单次对话允许注入的最大 Token 数")}
+                      {renderField("推理默认等级", "agents.defaults.thinkingDefault", "select", "决定模型生成回复时的思考深度", [
+                        { label: "禁用 (off)", value: "off" },
+                        { label: "极简 (minimal)", value: "minimal" },
+                        { label: "低 (low)", value: "low" },
+                        { label: "中 (medium)", value: "medium" },
+                        { label: "高 (high)", value: "high" },
+                        { label: "极高 (xhigh)", value: "xhigh" },
+                        { label: "自动适配 (adaptive)", value: "adaptive" }
+                      ])}
+                      {renderField("并发上限", "agents.defaults.maxConcurrent", "number", "全局允许同时运行的 Agent 任务数")}
                     </>
                   )}
                   {activeSection === "auth" && (

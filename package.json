@@ -1,6 +1,6 @@
 {
   "name": "openclaw-new-ui",
-  "version": "0.1.1",
+  "version": "2026.3.31",
   "private": true,
   "scripts": {
     "dev": "env-cmd next dev",
@@ -20,6 +20,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
+    "@tailwindcss/typography": "^0.5.19",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
