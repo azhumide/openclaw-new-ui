@@ -335,8 +335,13 @@ export default function ChatPage() {
   }, []);
 
   const handleSend = useCallback(async () => {
-    if (!inputText.trim() || !client || !connected) return;
+    if (!inputText.trim() && selectedFiles.length === 0) return;
+    if (!client || !connected) return;
+
     const text = inputText;
+    const currentFiles = [...selectedFiles];
+    
+    // Optimistic user message (UI only shows text currently, but we clear inputs)
     const userMessage = {
         id: generateUUID(),
         role: "user",
@@ -344,22 +349,39 @@ export default function ChatPage() {
         createdAt: new Date().toISOString()
     };
 
-    // Optimistic update
     setMessages(prev => [...prev, userMessage]);
     setInputText("");
-    setIsTyping(true);
     setSelectedFiles([]);
+    setIsTyping(true);
+
     try {
+        // Convert files to Base64 attachments
+        const attachments = await Promise.all(currentFiles.map(file => {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              resolve({
+                fileName: file.name,
+                mimeType: file.type,
+                content: base64
+              });
+            };
+            reader.readAsDataURL(file);
+          });
+        }));
+
         await client.request("chat.send", {
             sessionKey: activeSession,
             message: text,
+            attachments: attachments.length > 0 ? attachments : undefined,
             idempotencyKey: userMessage.id
         });
     } catch (e: any) {
         setIsTyping(false);
         toast({ title: "发送失败", description: e.message, variant: "destructive" });
     }
-  }, [inputText, client, connected, activeSession, toast]);
+  }, [inputText, selectedFiles, client, connected, activeSession, toast]);
 
   const handleSwitchSession = (key: string) => {
     setIsInitialLoad(true);
@@ -403,8 +425,65 @@ export default function ChatPage() {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const files = Array.from(e.clipboardData.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(prev => [...prev, ...files]);
+    }
+  };
+
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Modern File Preview Component
+  const FilePreviewItem = ({ file, onRemove }: { file: File, onRemove: () => void }) => {
+    const [preview, setPreview] = useState<string | null>(null);
+    const isImage = file.type.startsWith('image/');
+
+    useEffect(() => {
+      if (!isImage) return;
+      const url = URL.createObjectURL(file);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }, [file, isImage]);
+
+    if (isImage) {
+      return (
+        <div className="relative group size-14 sm:size-16 rounded-xl overflow-hidden border border-primary/20 shadow-sm transition-all hover:scale-105 active:scale-95">
+          {preview ? (
+            <img src={preview} alt="preview" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-muted animate-pulse" />
+          )}
+          <button 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
+            className="absolute top-1 right-1 size-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+          >
+            <XCircle className="size-3.5" />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-3 py-2 group/file h-14 sm:h-16 max-w-[160px] animate-in zoom-in-95 duration-200">
+        <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+          <FileText className="size-4 text-primary" />
+        </div>
+        <div className="flex flex-col min-w-0 pr-1">
+          <span className="text-[10px] font-bold truncate text-foreground">{file.name}</span>
+          <span className="text-[8px] font-medium opacity-40 uppercase">{(file.size / 1024).toFixed(1)} KB</span>
+        </div>
+        <button 
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }} 
+          className="hover:text-destructive transition-colors ml-1 cursor-pointer p-0.5 opacity-0 group-hover/file:opacity-100"
+        >
+          <XCircle className="size-4 fill-background" />
+        </button>
+      </div>
+    );
   };
 
   const activeSessionData = useMemo(() => {
@@ -793,23 +872,13 @@ export default function ChatPage() {
                     onDrop={handleDrop}
                 >
                     {selectedFiles.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-2 px-2 relative z-50 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <div className="flex flex-wrap gap-2.5 mb-3 px-2 relative z-50 animate-in fade-in slide-in-from-bottom-3 duration-500">
                             {selectedFiles.map((file, idx) => (
-                                <div key={idx} className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-3 py-1.5 group/file">
-                                    <FileText className="size-3 text-primary" />
-                                    <span className="text-[10px] font-bold truncate max-w-[120px]">{file.name}</span>
-                                    <button 
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            removeFile(idx);
-                                        }} 
-                                        className="hover:text-destructive transition-colors ml-1 cursor-pointer p-0.5"
-                                    >
-                                        <XCircle className="size-3.5 fill-background" />
-                                    </button>
-                                </div>
+                                <FilePreviewItem 
+                                    key={`${file.name}-${idx}`} 
+                                    file={file} 
+                                    onRemove={() => removeFile(idx)} 
+                                />
                             ))}
                         </div>
                     )}
@@ -833,6 +902,7 @@ export default function ChatPage() {
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                            onPaste={handlePaste}
                             placeholder="Message OpenClaw..."
                             className="flex-1 bg-transparent border-none focus:ring-0 resize-none min-h-[44px] sm:min-h-[52px] max-h-32 sm:max-h-48 py-3 px-1 text-sm sm:text-[15px] font-medium custom-scrollbar placeholder:text-muted-foreground/40 leading-relaxed"
                             rows={1}
