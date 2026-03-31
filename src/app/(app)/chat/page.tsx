@@ -331,10 +331,21 @@ export default function ChatPage() {
           toast({ title: "对话错误", description: errorMessage || "发生未知错误", variant: "destructive" });
         }
       }
-      // 2. 监听原始 Agent 事件以捕捉流式工具
-      else if (evt.event === "agent") {
-        const { runId, stream, data } = evt.payload;
-        if (stream === "tool" && data) {
+      // 2. 监听原始 Agent/Session 事件以捕捉流式工具
+      else if (evt.event === "agent" || evt.event === "session.tool") {
+        const { runId, stream, data, sessionKey: eventSessionKey } = evt.payload;
+        
+        if (eventSessionKey) {
+          const normalizedActive = activeSession.startsWith("agent:") ? activeSession.split(":").pop() : activeSession;
+          const normalizedEvent = eventSessionKey.startsWith("agent:") ? eventSessionKey.split(":").pop() : eventSessionKey;
+          if (normalizedEvent !== normalizedActive) return;
+        }
+
+        // 注意：基于 OpenClaw 的通信机制，如果没有启用 verbose 模式，
+        // event === "session.tool" 的时候只会带有 phase="start", "update", "result" 等基本信息，
+        // 它的 data.result 以及 data.partialResult 会由于流量优化被后端过滤掉。
+        // 但即使只有阶段信息，也要捕捉，保持 UI 上呈现“工具使用中”的状态防止最后结算时出现闪现
+        if ((stream === "tool" || evt.event === "session.tool") && data) {
           setActiveTools(prev => {
             const currentParts = prev[runId] || [];
             const { phase, toolCallId } = data;
