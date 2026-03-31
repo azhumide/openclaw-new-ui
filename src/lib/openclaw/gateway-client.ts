@@ -133,6 +133,7 @@ export class GatewayClient {
         platform: "web",
         mode: "webchat",
       },
+      caps: ["session-agent", "session-status", "session-usage"],
       role: "operator",
       scopes: ["operator.admin", "operator.approvals", "operator.pairing", "operator.read", "operator.write"],
       auth: {
