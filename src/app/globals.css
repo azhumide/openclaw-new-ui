@@ -74,45 +74,81 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    /* Reset safe area for body to prevent double padding or scrolling issues */
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    /* Prevent body scroll */
   }
 }
 
 @layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mt-safe {
+    margin-top: env(safe-area-inset-top);
+  }
+
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+
+  .h-safe-screen {
+    height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
   }
+
+  /* ... rest of existing utilities ... */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: var(--color-border);
     border-radius: 9999px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-muted-foreground);
   }
+
   .custom-scrollbar-dark {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   }
+
   .custom-scrollbar-dark::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
+
   .custom-scrollbar-dark::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar-dark::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
   }
+
   .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 255, 255, 0.2);
   }

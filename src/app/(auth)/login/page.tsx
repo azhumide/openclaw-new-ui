@@ -78,9 +78,9 @@ export default function LoginPage() {
 
         // Auto login if enabled and has URL/Token
         if (settings.autoLogin && settings.gatewayUrl && token) {
-            setTimeout(() => {
-                gatewayForm.handleSubmit(onGatewaySubmit)();
-            }, 500);
+          setTimeout(() => {
+            gatewayForm.handleSubmit(onGatewaySubmit)();
+          }, 500);
         }
       } catch (e) {
         console.error("Failed to parse settings", e);
@@ -120,7 +120,7 @@ export default function LoginPage() {
   const persistSettings = (data: GatewayFormValues) => {
     const KEY = "openclaw.control.settings.v1";
     const TOKEN_KEY = "openclaw.control.token.v1";
-    
+
     if (!data.rememberMe) {
       localStorage.removeItem(KEY);
       localStorage.removeItem(TOKEN_KEY);
@@ -133,7 +133,7 @@ export default function LoginPage() {
     if (existingRaw) {
       try {
         existingSettings = JSON.parse(existingRaw);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const settings = {
@@ -148,7 +148,7 @@ export default function LoginPage() {
       locale: existingSettings.locale || "zh-CN",
     };
     localStorage.setItem(KEY, JSON.stringify(settings));
-    
+
     if (data.gatewayToken) {
       localStorage.setItem(TOKEN_KEY, data.gatewayToken);
       sessionStorage.setItem(TOKEN_KEY, data.gatewayToken);
@@ -165,10 +165,10 @@ export default function LoginPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       persistSettings(values);
       router.push("/dashboard");
-      toast({ 
-        title: "网关连接成功", 
+      toast({
+        title: "网关连接成功",
         description: "已成功建立 WebSocket 链接。",
-        duration: 2000 
+        duration: 2000
       });
     } catch (err: any) {
       setError(err.message || "网关连接失败。");
@@ -190,19 +190,19 @@ export default function LoginPage() {
               <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                 <defs>
                   <linearGradient id="lobster-gradient-login" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#ff4d4d"/>
-                    <stop offset="100%" stopColor="#991b1b"/>
+                    <stop offset="0%" stopColor="#ff4d4d" />
+                    <stop offset="100%" stopColor="#991b1b" />
                   </linearGradient>
                 </defs>
-                <path d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z" fill="url(#lobster-gradient-login)"/>
-                <path d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z" fill="url(#lobster-gradient-login)"/>
-                <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" fill="url(#lobster-gradient-login)"/>
-                <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-                <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-                <circle cx="45" cy="35" r="6" fill="#050810"/>
-                <circle cx="75" cy="35" r="6" fill="#050810"/>
-                <circle cx="46" cy="34" r="2.5" fill="#00e5cc"/>
-                <circle cx="76" cy="34" r="2.5" fill="#00e5cc"/>
+                <path d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z" fill="url(#lobster-gradient-login)" />
+                <path d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z" fill="url(#lobster-gradient-login)" />
+                <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" fill="url(#lobster-gradient-login)" />
+                <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" />
+                <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" />
+                <circle cx="45" cy="35" r="6" fill="#050810" />
+                <circle cx="75" cy="35" r="6" fill="#050810" />
+                <circle cx="46" cy="34" r="2.5" fill="#00e5cc" />
+                <circle cx="76" cy="34" r="2.5" fill="#00e5cc" />
               </svg>
             </div>
             <span>OpenClaw New UI</span>
@@ -214,25 +214,25 @@ export default function LoginPage() {
             isTyping={isTyping}
             showPassword={
               focusedField === "token" ? showToken :
-              focusedField === "password" ? showPassword :
-              true
+                focusedField === "password" ? showPassword :
+                  true
             }
             passwordLength={
               focusedField === "token" ? (gatewayForm.watch("gatewayToken")?.length || 0) :
-              focusedField === "password" ? (gatewayForm.watch("password")?.length || 0) :
-              0
+                focusedField === "password" ? (gatewayForm.watch("password")?.length || 0) :
+                  0
             }
           />
         </div>
 
         <div className="relative z-20 flex items-center gap-8 text-sm text-gray-600 dark:text-gray-700">
-          <Link 
+          <Link
             href="/privacy"
             className="hover:text-gray-900 dark:hover:text-black transition-colors cursor-pointer"
           >
             隐私政策
           </Link>
-          <Link 
+          <Link
             href="/terms"
             className="hover:text-gray-900 dark:hover:text-black transition-colors cursor-pointer"
           >
@@ -255,19 +255,19 @@ export default function LoginPage() {
               <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                 <defs>
                   <linearGradient id="lobster-gradient-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#ff4d4d"/>
-                    <stop offset="100%" stopColor="#991b1b"/>
+                    <stop offset="0%" stopColor="#ff4d4d" />
+                    <stop offset="100%" stopColor="#991b1b" />
                   </linearGradient>
                 </defs>
-                <path d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z" fill="url(#lobster-gradient-mobile)"/>
-                <path d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z" fill="url(#lobster-gradient-mobile)"/>
-                <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" fill="url(#lobster-gradient-mobile)"/>
-                <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-                <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-                <circle cx="45" cy="35" r="6" fill="#050810"/>
-                <circle cx="75" cy="35" r="6" fill="#050810"/>
-                <circle cx="46" cy="34" r="2.5" fill="#00e5cc"/>
-                <circle cx="76" cy="34" r="2.5" fill="#00e5cc"/>
+                <path d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z" fill="url(#lobster-gradient-mobile)" />
+                <path d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z" fill="url(#lobster-gradient-mobile)" />
+                <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" fill="url(#lobster-gradient-mobile)" />
+                <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" />
+                <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" />
+                <circle cx="45" cy="35" r="6" fill="#050810" />
+                <circle cx="75" cy="35" r="6" fill="#050810" />
+                <circle cx="46" cy="34" r="2.5" fill="#00e5cc" />
+                <circle cx="76" cy="34" r="2.5" fill="#00e5cc" />
               </svg>
             </div>
             <span>OpenClaw</span>
@@ -283,18 +283,18 @@ export default function LoginPage() {
           </div>
           <form onSubmit={gatewayForm.handleSubmit(onGatewaySubmit)} className="space-y-4">
             <div className="space-y-1.5">
-                <Label htmlFor="websocketUrl" className="text-sm font-medium">WebSocket URL</Label>
-                <div className="relative">
-                  <Input 
-                    id="websocketUrl" 
-                    placeholder="ws://example.com:18789"
-                    autoComplete="off"
-                    {...gatewayForm.register("websocketUrl")} 
-                    onFocus={() => { setIsTyping(true); setFocusedField("url"); }}
-                    onBlur={() => { setIsTyping(false); setFocusedField(null); }}
-                    className="h-11 border-border/60 rounded-xl" 
-                  />
-                </div>
+              <Label htmlFor="websocketUrl" className="text-sm font-medium">WebSocket URL</Label>
+              <div className="relative">
+                <Input
+                  id="websocketUrl"
+                  placeholder="ws://example.com:18789"
+                  autoComplete="off"
+                  {...gatewayForm.register("websocketUrl")}
+                  onFocus={() => { setIsTyping(true); setFocusedField("url"); }}
+                  onBlur={() => { setIsTyping(false); setFocusedField(null); }}
+                  className="h-11 border-border/60 rounded-xl"
+                />
+              </div>
               {gatewayForm.formState.errors.websocketUrl && <p className="text-xs text-destructive">{gatewayForm.formState.errors.websocketUrl.message}</p>}
             </div>
 
@@ -302,15 +302,15 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="gatewayToken" className="text-sm font-medium">网关令牌</Label>
                 <div className="relative">
-                  <Input 
-                    id="gatewayToken" 
+                  <Input
+                    id="gatewayToken"
                     type={showToken ? "text" : "password"}
                     autoComplete="off"
                     placeholder="your-secret-token"
-                    {...gatewayForm.register("gatewayToken")} 
+                    {...gatewayForm.register("gatewayToken")}
                     onFocus={() => { setIsTyping(true); setFocusedField("token"); }}
                     onBlur={() => { setIsTyping(false); setFocusedField(null); }}
-                    className="h-11 border-border/60 rounded-xl pr-10" 
+                    className="h-11 border-border/60 rounded-xl pr-10"
                   />
                   <button
                     type="button"
@@ -325,15 +325,15 @@ export default function LoginPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="gatewayPassword" className="text-sm font-medium">密码 (不存储)</Label>
                 <div className="relative">
-                  <Input 
-                    id="gatewayPassword" 
+                  <Input
+                    id="gatewayPassword"
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
-                    placeholder="system password" 
-                    {...gatewayForm.register("password")} 
+                    placeholder="system password"
+                    {...gatewayForm.register("password")}
                     onFocus={() => { setIsTyping(true); setFocusedField("password"); }}
                     onBlur={() => { setIsTyping(false); setFocusedField(null); }}
-                    className="h-11 border-border/60 rounded-xl pr-10" 
+                    className="h-11 border-border/60 rounded-xl pr-10"
                   />
                   <button
                     type="button"
@@ -348,38 +348,38 @@ export default function LoginPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="sessionSecret" className="text-sm font-medium">默认会话密钥</Label>
-              <Input 
-                id="sessionSecret" 
+              <Input
+                id="sessionSecret"
                 autoComplete="off"
-                {...gatewayForm.register("sessionSecret")} 
+                {...gatewayForm.register("sessionSecret")}
                 onFocus={() => { setIsTyping(true); setFocusedField("session"); }}
                 onBlur={() => { setIsTyping(false); setFocusedField(null); }}
-                className="h-11 border-border/60 rounded-xl" 
+                className="h-11 border-border/60 rounded-xl"
               />
               {gatewayForm.formState.errors.sessionSecret && <p className="text-xs text-destructive mt-1">{gatewayForm.formState.errors.sessionSecret.message}</p>}
             </div>
             <div className="p-5 bg-muted/20 border border-border/30 rounded-3xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5 text-left">
-                    <Label htmlFor="rememberMe" className="text-sm font-bold cursor-pointer">记住登录信息</Label>
-                    <p className="text-[11px] text-muted-foreground font-medium">保存网关令牌到本地</p>
+                  <Label htmlFor="rememberMe" className="text-sm font-bold cursor-pointer">记住登录信息</Label>
+                  <p className="text-[11px] text-muted-foreground font-medium">保存网关令牌到本地</p>
                 </div>
-                <Switch 
-                   id="rememberMe" 
-                   checked={gatewayForm.watch("rememberMe")}
-                   onCheckedChange={(checked) => gatewayForm.setValue("rememberMe", checked)}
+                <Switch
+                  id="rememberMe"
+                  checked={gatewayForm.watch("rememberMe")}
+                  onCheckedChange={(checked) => gatewayForm.setValue("rememberMe", checked)}
                 />
               </div>
               <div className="h-px bg-border/40" />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5 text-left">
-                    <Label htmlFor="autoLogin" className="text-sm font-bold cursor-pointer">自动登录</Label>
-                    <p className="text-[11px] text-muted-foreground font-medium">下次打开时自动连接</p>
+                  <Label htmlFor="autoLogin" className="text-sm font-bold cursor-pointer">自动登录</Label>
+                  <p className="text-[11px] text-muted-foreground font-medium">下次打开时自动连接</p>
                 </div>
-                <Switch 
-                   id="autoLogin" 
-                   checked={gatewayForm.watch("autoLogin")}
-                   onCheckedChange={(checked) => gatewayForm.setValue("autoLogin", checked)}
+                <Switch
+                  id="autoLogin"
+                  checked={gatewayForm.watch("autoLogin")}
+                  onCheckedChange={(checked) => gatewayForm.setValue("autoLogin", checked)}
                 />
               </div>
             </div>

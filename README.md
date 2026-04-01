@@ -148,6 +148,32 @@ docker run -d -p 3000:3000 --name openclaw-ui openclaw-new-ui
 
 ---
 
+## 🍎 iOS 原生应用支持 (iOS App Support)
+
+**OpenClaw New UI** 现已支持通过 [Capacitor](https://capacitorjs.com/) 转换为原生 iOS 应用。
+
+### 准备工作
+- 确保已安装 Xcode (建议版本 16.0+ / iOS 26.0+)。
+- 确保已安装 CocoaPods (如果使用旧版 Capacitor) 或最新的 Swift Package Manager 环境。
+
+### 编译与运行
+项目中已集成快捷指令：
+
+```bash
+# 1. 编译 Web 项目并同步至 iOS
+npm run ios:build
+
+# 2. 在 Xcode 中打开项目
+npm run ios:open
+```
+
+### 真机调试注意事项
+1. **开发者证书**: 在 Xcode 的 `Signing & Capabilities` 中配置您的 Apple ID 签名。
+2. **安全区域**: UI 已适配 iPhone 刘海屏（Safe Area），各组件均会自动避让状态栏与底部横条。
+3. **网关连接**: 在真机测试时，请确保手机与电脑在同一局域网，并在登录界面使用 **Mac 的内网 IP**（如 `192.168.x.x`）而非 `localhost`。
+
+---
+
 ## 🔐 环境配置
 
 OpenClaw New UI 采用**零后端环境要求**设计。所有网关连接参数（WebSocket URL、Token、密码等）均通过前端登录界面配置，并安全地持久化在您的浏览器 LocalStorage 中。

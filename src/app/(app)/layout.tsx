@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  History, LayoutDashboard, MessageSquare, Radio, 
+import {
+  History, LayoutDashboard, MessageSquare, Radio,
   Settings, Terminal, Zap, LogOut, ChevronRight,
   Database, Activity, Clock, Bell, Sun, Moon, User, Cpu, Server,
   PanelLeft, PanelLeftClose, SquareTerminal
@@ -42,7 +42,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { connected, snapshot } = useGateway();
   const { profile } = useProfile();
-  
+
   const [profileOpen, setProfileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -59,8 +59,8 @@ function AppContent({ children }: { children: React.ReactNode }) {
   // Initial theme check and mount
   useEffect(() => {
     setMounted(true);
-    const isDark = document.documentElement.classList.contains('dark') || 
-                   (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const isDark = document.documentElement.classList.contains('dark') ||
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     setIsDarkMode(isDark);
     if (isDark) document.documentElement.classList.add('dark');
   }, []);
@@ -95,24 +95,24 @@ function AppContent({ children }: { children: React.ReactNode }) {
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {mobileSidebarOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm lg:hidden" 
-            onClick={() => setMobileSidebarOpen(false)} 
+            className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm lg:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
           />
         )}
       </AnimatePresence>
 
       {/* Sidebar */}
       <aside className={cn(
-        "border-r border-border/50 bg-background lg:bg-muted/5 flex flex-col h-screen shrink-0 fixed lg:relative z-50 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0 will-change-transform overflow-hidden",
+        "border-r border-border/50 bg-background lg:bg-muted/5 flex flex-col h-dvh shrink-0 fixed lg:relative z-50 transition-[transform,width] duration-300 ease-in-out lg:translate-x-0 will-change-transform overflow-hidden",
         mobileSidebarOpen ? "translate-x-0 w-60 shadow-2xl lg:shadow-none" : "-translate-x-full w-60 lg:w-auto",
         sidebarCollapsed ? "lg:w-20" : "lg:w-64"
       )}>
         <div className={cn(
-          "h-14 border-b border-border/50 bg-background/50 backdrop-blur-md flex items-center shrink-0 transition-all duration-300",
+          "h-14 border-b border-border/50 bg-background/50 backdrop-blur-md flex items-center shrink-0 transition-all duration-300 pt-safe",
           sidebarCollapsed ? "justify-center p-0" : "justify-between px-5"
         )}>
           {!sidebarCollapsed && (
@@ -121,19 +121,19 @@ function AppContent({ children }: { children: React.ReactNode }) {
                 <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                   <defs>
                     <linearGradient id="lobster-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#ff4d4d"/>
-                      <stop offset="100%" stopColor="#991b1b"/>
+                      <stop offset="0%" stopColor="#ff4d4d" />
+                      <stop offset="100%" stopColor="#991b1b" />
                     </linearGradient>
                   </defs>
-                  <path d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z" fill="url(#lobster-gradient)"/>
-                  <path d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z" fill="url(#lobster-gradient)"/>
-                  <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" fill="url(#lobster-gradient)"/>
-                  <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-                  <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-                  <circle cx="45" cy="35" r="6" fill="#050810"/>
-                  <circle cx="75" cy="35" r="6" fill="#050810"/>
-                  <circle cx="46" cy="34" r="2.5" fill="#00e5cc"/>
-                  <circle cx="76" cy="34" r="2.5" fill="#00e5cc"/>
+                  <path d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z" fill="url(#lobster-gradient)" />
+                  <path d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z" fill="url(#lobster-gradient)" />
+                  <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" fill="url(#lobster-gradient)" />
+                  <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" />
+                  <circle cx="45" cy="35" r="6" fill="#050810" />
+                  <circle cx="75" cy="35" r="6" fill="#050810" />
+                  <circle cx="46" cy="34" r="2.5" fill="#00e5cc" />
+                  <circle cx="76" cy="34" r="2.5" fill="#00e5cc" />
                 </svg>
               </div>
               <div className="flex flex-col">
@@ -143,28 +143,28 @@ function AppContent({ children }: { children: React.ReactNode }) {
             </Link>
           )}
           {sidebarCollapsed && (
-             <div className="size-10 p-1 rounded-xl bg-background/5 border border-border/40 flex items-center justify-center mx-auto hover:scale-105 transition-transform duration-300 cursor-pointer">
-                <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                  <defs>
-                    <linearGradient id="lobster-gradient-collapsed" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#ff4d4d"/>
-                      <stop offset="100%" stopColor="#991b1b"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z" fill="url(#lobster-gradient-collapsed)"/>
-                  <path d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z" fill="url(#lobster-gradient-collapsed)"/>
-                  <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" fill="url(#lobster-gradient-collapsed)"/>
-                  <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-                  <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-                  <circle cx="45" cy="35" r="6" fill="#050810"/>
-                  <circle cx="75" cy="35" r="6" fill="#050810"/>
-                  <circle cx="46" cy="34" r="2.5" fill="#00e5cc"/>
-                  <circle cx="76" cy="34" r="2.5" fill="#00e5cc"/>
-                </svg>
-             </div>
+            <div className="size-10 p-1 rounded-xl bg-background/5 border border-border/40 flex items-center justify-center mx-auto hover:scale-105 transition-transform duration-300 cursor-pointer">
+              <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                <defs>
+                  <linearGradient id="lobster-gradient-collapsed" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ff4d4d" />
+                    <stop offset="100%" stopColor="#991b1b" />
+                  </linearGradient>
+                </defs>
+                <path d="M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100 C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55 C105 35 90 10 60 10Z" fill="url(#lobster-gradient-collapsed)" />
+                <path d="M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z" fill="url(#lobster-gradient-collapsed)" />
+                <path d="M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z" fill="url(#lobster-gradient-collapsed)" />
+                <path d="M45 15 Q35 5 30 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" />
+                <path d="M75 15 Q85 5 90 8" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round" />
+                <circle cx="45" cy="35" r="6" fill="#050810" />
+                <circle cx="75" cy="35" r="6" fill="#050810" />
+                <circle cx="46" cy="34" r="2.5" fill="#00e5cc" />
+                <circle cx="76" cy="34" r="2.5" fill="#00e5cc" />
+              </svg>
+            </div>
           )}
         </div>
-        
+
         <nav className="flex-1 overflow-y-auto p-3.5 space-y-4 custom-scrollbar overflow-x-hidden">
           <SidebarGroup title="聊天" collapsed={sidebarCollapsed}>
             <SidebarItem icon={<MessageSquare className="size-4" />} label="聊天" href="/chat" active={pathname === "/chat"} collapsed={sidebarCollapsed} />
@@ -201,120 +201,120 @@ function AppContent({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-dvh overflow-hidden bg-background">
         {/* Top Header */}
-        <header className="h-14 sm:h-16 border-b border-border/50 flex items-center justify-between px-3 sm:pl-4 sm:pr-8 bg-background/80 backdrop-blur-md z-10 shrink-0">
+        <header className="h-14 sm:h-16 pt-safe border-b border-border/50 flex items-center justify-between px-3 sm:pl-4 sm:pr-8 bg-background/80 backdrop-blur-md z-10 shrink-0">
           <div className="flex items-center gap-1 sm:gap-2">
-             <Button variant="ghost" size="icon" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="rounded-xl hover:bg-muted shrink-0 hidden lg:flex">
-               <PanelLeft className="size-4 text-muted-foreground" />
-             </Button>
-             <Button variant="ghost" size="icon" onClick={() => setMobileSidebarOpen(true)} className="rounded-xl hover:bg-muted shrink-0 lg:hidden">
-               <PanelLeft className="size-4 text-muted-foreground" />
-             </Button>
-             <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 bg-muted/50 rounded-full text-[9px] sm:text-[11px] font-medium border border-border/50 shrink-0">
-               <span className={cn("size-1.5 sm:size-2 rounded-full shrink-0", connected ? "bg-green-500" : "bg-red-500 animate-pulse")} />
-               <span className="flex items-center gap-1">
-                 <span className="hidden sm:inline">版本</span>
-                 <span>{snapshot?.server?.version || APP_VERSION}</span>
-               </span>
-             </div>
-             <div className={cn(
-               "flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 rounded-full text-[9px] sm:text-[11px] font-medium border shrink-0",
-               connected ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
-             )}>
-               <span className="hidden sm:inline">健康状况: </span>{connected ? "在线" : "离线"}
-             </div>
-             
-             {/* Portal Target for Dynamic Page Components */}
-             <div id="header-context-monitor-portal" className="flex items-center shrink-0" />
-          </div>
-          
-          <div className="flex items-center gap-0.5 sm:gap-3 shrink-0">
-             <DropdownMenu>
-               <DropdownMenuTrigger asChild>
-                 <Button variant="ghost" size="icon" className="rounded-full size-8 sm:size-10 relative">
-                   <Bell className="size-3.5 sm:size-4 text-muted-foreground" />
-                   {/* notification indicator - only show if there are notifications */}
-                   {notifications.length > 0 && (
-                     <span className="absolute top-1.5 right-1.5 size-1.5 sm:size-2 bg-red-500 rounded-full border-2 border-background animate-pulse" />
-                   )}
-                 </Button>
-               </DropdownMenuTrigger>
-               <DropdownMenuContent align="end" className="w-72 sm:w-80 p-0 border-border/50 shadow-2xl rounded-xl sm:rounded-2xl overflow-hidden mt-1 sm:mt-2">
-                 <div className="p-3 sm:p-4 border-b border-border/50 bg-muted/20">
-                    <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-muted-foreground">消息中心</p>
-                 </div>
-                 <div className="p-6 sm:p-8 text-center bg-background/50 backdrop-blur">
-                    <Bell className="size-8 text-muted-foreground/30 mx-auto" strokeWidth={1} />
-                    <p className="mt-4 text-xs sm:text-[13px] font-bold text-muted-foreground">暂无新的告警通知</p>
-                    <p className="mt-1.5 text-[9px] sm:text-[11px] font-medium text-muted-foreground/40 break-keep">您当前的所有服务均已就绪，节点保持正常运行。</p>
-                 </div>
-               </DropdownMenuContent>
-             </DropdownMenu>
+            <Button variant="ghost" size="icon" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="rounded-xl hover:bg-muted shrink-0 hidden lg:flex">
+              <PanelLeft className="size-4 text-muted-foreground" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => setMobileSidebarOpen(true)} className="rounded-xl hover:bg-muted shrink-0 lg:hidden">
+              <PanelLeft className="size-4 text-muted-foreground" />
+            </Button>
+            <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 bg-muted/50 rounded-full text-[9px] sm:text-[11px] font-medium border border-border/50 shrink-0">
+              <span className={cn("size-1.5 sm:size-2 rounded-full shrink-0", connected ? "bg-green-500" : "bg-red-500 animate-pulse")} />
+              <span className="flex items-center gap-1">
+                <span className="hidden sm:inline">版本</span>
+                <span>{snapshot?.server?.version || APP_VERSION}</span>
+              </span>
+            </div>
+            <div className={cn(
+              "flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-1 rounded-full text-[9px] sm:text-[11px] font-medium border shrink-0",
+              connected ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+            )}>
+              <span className="hidden sm:inline">健康状况: </span>{connected ? "在线" : "离线"}
+            </div>
 
-             <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full size-8 sm:size-10 transition-all active:scale-90 group relative overflow-hidden">
-                <AnimatePresence mode="wait">
-                  {isDarkMode ? (
-                    <motion.div
-                      key="moon"
-                      initial={{ y: 20, opacity: 0, rotate: -45 }}
-                      animate={{ y: 0, opacity: 1, rotate: 0 }}
-                      exit={{ y: -20, opacity: 0, rotate: 45 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Moon className="size-3.5 sm:size-4 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="sun"
-                      initial={{ y: 20, opacity: 0, rotate: -45 }}
-                      animate={{ y: 0, opacity: 1, rotate: 0 }}
-                      exit={{ y: -20, opacity: 0, rotate: 45 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Sun className="size-3.5 sm:size-4 text-orange-500 group-hover:text-amber-500 transition-colors" />
-                    </motion.div>
+            {/* Portal Target for Dynamic Page Components */}
+            <div id="header-context-monitor-portal" className="flex items-center shrink-0" />
+          </div>
+
+          <div className="flex items-center gap-0.5 sm:gap-3 shrink-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full size-8 sm:size-10 relative">
+                  <Bell className="size-3.5 sm:size-4 text-muted-foreground" />
+                  {/* notification indicator - only show if there are notifications */}
+                  {notifications.length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 size-1.5 sm:size-2 bg-red-500 rounded-full border-2 border-background animate-pulse" />
                   )}
-                </AnimatePresence>
-             </Button>
-             <div className="size-px h-4 sm:h-6 bg-border mx-1 sm:mx-1" />
-             
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative size-8 rounded-full p-0 flex items-center justify-center bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all shrink-0 overflow-hidden">
-                    {profile.avatar ? (
-                      <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="size-4 text-primary" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 rounded-xl border-border/50 shadow-xl" align="end">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none tracking-tight">{profile.nickname}</p>
-                      <p className="text-xs leading-none text-muted-foreground font-medium opacity-60 truncate">{profile.bio}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-border/30" />
-                  <DropdownMenuItem className="rounded-lg gap-3 py-2.5 cursor-pointer font-medium" onClick={() => setProfileOpen(true)}>
-                    <User className="size-4 opacity-60" />
-                    <span>个人资料</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="rounded-lg gap-3 py-2.5 cursor-pointer font-medium" onClick={() => setSettingsOpen(true)}>
-                    <Settings className="size-4 opacity-60" />
-                    <span>账户设置</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-border/30" />
-                  <DropdownMenuItem 
-                    className="rounded-lg gap-3 py-2.5 text-destructive focus:text-destructive focus:bg-destructive/5 cursor-pointer font-bold"
-                    onClick={handleLogout}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72 sm:w-80 p-0 border-border/50 shadow-2xl rounded-xl sm:rounded-2xl overflow-hidden mt-1 sm:mt-2">
+                <div className="p-3 sm:p-4 border-b border-border/50 bg-muted/20">
+                  <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-muted-foreground">消息中心</p>
+                </div>
+                <div className="p-6 sm:p-8 text-center bg-background/50 backdrop-blur">
+                  <Bell className="size-8 text-muted-foreground/30 mx-auto" strokeWidth={1} />
+                  <p className="mt-4 text-xs sm:text-[13px] font-bold text-muted-foreground">暂无新的告警通知</p>
+                  <p className="mt-1.5 text-[9px] sm:text-[11px] font-medium text-muted-foreground/40 break-keep">您当前的所有服务均已就绪，节点保持正常运行。</p>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full size-8 sm:size-10 transition-all active:scale-90 group relative overflow-hidden">
+              <AnimatePresence mode="wait">
+                {isDarkMode ? (
+                  <motion.div
+                    key="moon"
+                    initial={{ y: 20, opacity: 0, rotate: -45 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    exit={{ y: -20, opacity: 0, rotate: 45 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    <LogOut className="size-4" />
-                    <span>退出登录</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <Moon className="size-3.5 sm:size-4 text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="sun"
+                    initial={{ y: 20, opacity: 0, rotate: -45 }}
+                    animate={{ y: 0, opacity: 1, rotate: 0 }}
+                    exit={{ y: -20, opacity: 0, rotate: 45 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Sun className="size-3.5 sm:size-4 text-orange-500 group-hover:text-amber-500 transition-colors" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Button>
+            <div className="size-px h-4 sm:h-6 bg-border mx-1 sm:mx-1" />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative size-8 rounded-full p-0 flex items-center justify-center bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all shrink-0 overflow-hidden">
+                  {profile.avatar ? (
+                    <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="size-4 text-primary" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 rounded-xl border-border/50 shadow-xl" align="end">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none tracking-tight">{profile.nickname}</p>
+                    <p className="text-xs leading-none text-muted-foreground font-medium opacity-60 truncate">{profile.bio}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-border/30" />
+                <DropdownMenuItem className="rounded-lg gap-3 py-2.5 cursor-pointer font-medium" onClick={() => setProfileOpen(true)}>
+                  <User className="size-4 opacity-60" />
+                  <span>个人资料</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="rounded-lg gap-3 py-2.5 cursor-pointer font-medium" onClick={() => setSettingsOpen(true)}>
+                  <Settings className="size-4 opacity-60" />
+                  <span>账户设置</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-border/30" />
+                <DropdownMenuItem
+                  className="rounded-lg gap-3 py-2.5 text-destructive focus:text-destructive focus:bg-destructive/5 cursor-pointer font-bold"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="size-4" />
+                  <span>退出登录</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -323,7 +323,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </div>
-      
+
       <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
       <AccountSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
